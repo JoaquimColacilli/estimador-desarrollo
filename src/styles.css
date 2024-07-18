@@ -1,1 +1,34 @@
-/* You can add global styles to this file, and also import other style files */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Agrega animaciones personalizadas */
+@keyframes slideInDown {
+  from {
+    transform: translateY(-20px);
+    max-height: 0;
+  }
+  to {
+    transform: translateY(0);
+    max-height: 1000px;
+  }
+}
+
+@keyframes slideOutUp {
+  from {
+    transform: translateY(0);
+    max-height: 1000px;
+  }
+  to {
+    transform: translateY(-20px);
+    max-height: 0;
+  }
+}
+
+.animate-slideInDown {
+  animation: slideInDown 0.5s;
+}
+
+.animate-slideOutUp {
+  animation: slideOutUp 0.5s;
+}
