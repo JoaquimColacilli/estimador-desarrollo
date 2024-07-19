@@ -32,3 +32,13 @@
 .animate-slideOutUp {
   animation: slideOutUp 0.5s ;
 }
+
+.canva-style{
+  display: flex;
+  width: 350px;
+  height: 350px;
+  justify-content: center;
+  align-items: center;
+  align-content: center;
+  margin: 0 auto;
+}
