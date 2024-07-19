@@ -2,13 +2,6 @@ import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { EstimadorService } from '../service/estimador.service';
-import {
-  trigger,
-  state,
-  style,
-  transition,
-  animate,
-} from '@angular/animations';
 
 @Component({
   selector: 'app-estimador',
@@ -21,6 +14,8 @@ export class EstimadorComponent {
   desarrolloHoras: number | null = null;
   estimaciones: any = null;
   totalHoras: number = 0;
+  showEstimaciones: boolean = false;
+  animatingOut: boolean = false;
 
   constructor(private estimadorService: EstimadorService) {}
 
@@ -30,10 +25,15 @@ export class EstimadorComponent {
         this.desarrolloHoras
       );
       this.calcularTotalHoras();
-      console.log(this.desarrolloHoras);
+      this.showEstimaciones = true;
     } else {
-      this.estimaciones = null;
-      this.totalHoras = 0;
+      this.animatingOut = true;
+      setTimeout(() => {
+        this.animatingOut = false;
+        this.estimaciones = null;
+        this.showEstimaciones = false;
+        this.totalHoras = 0;
+      }, 500); // Duración de la animación
     }
   }
 

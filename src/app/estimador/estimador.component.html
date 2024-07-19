@@ -22,10 +22,10 @@
       />
     </div>
     <div
-      *ngIf="estimaciones"
+      *ngIf="showEstimaciones || animatingOut"
       [ngClass]="{
-        'animate-slideInDown': desarrolloHoras,
-        'animate-slideOutUp': !desarrolloHoras
+        'animate-slideInDown': showEstimaciones && !animatingOut,
+        'animate-slideOutUp': animatingOut
       }"
       class="bg-gray-50 p-4 rounded-lg overflow-hidden"
     >
@@ -33,31 +33,31 @@
       <ul class="space-y-2">
         <li class="flex justify-between">
           <span>Análisis Funcional:</span>
-          <span>{{ estimaciones.analisisFuncional }} horas</span>
+          <span>{{ estimaciones?.analisisFuncional }} horas</span>
         </li>
         <li class="flex justify-between">
           <span>Análisis Técnico:</span>
-          <span>{{ estimaciones.analisisTecnico }} horas</span>
+          <span>{{ estimaciones?.analisisTecnico }} horas</span>
         </li>
         <li class="flex justify-between">
           <span>Desarrollo:</span>
-          <span>{{ estimaciones.desarrollo }} horas</span>
+          <span>{{ estimaciones?.desarrollo }} horas</span>
         </li>
         <li class="flex justify-between">
           <span>Pruebas Unitarias:</span>
-          <span>{{ estimaciones.pruebasUnitarias }} horas</span>
+          <span>{{ estimaciones?.pruebasUnitarias }} horas</span>
         </li>
         <li class="flex justify-between">
           <span>Pruebas de Integración:</span>
-          <span>{{ estimaciones.pruebasIntegracion }} horas</span>
+          <span>{{ estimaciones?.pruebasIntegracion }} horas</span>
         </li>
         <li class="flex justify-between">
           <span>Implementación y Soporte:</span>
-          <span>{{ estimaciones.implementacionYSoporte }} horas</span>
+          <span>{{ estimaciones?.implementacionYSoporte }} horas</span>
         </li>
         <li class="flex justify-between">
           <span>Gestión:</span>
-          <span>{{ estimaciones.gestion }} horas</span>
+          <span>{{ estimaciones?.gestion }} horas</span>
         </li>
         <li class="flex justify-between font-bold text-lg">
           <span>Total:</span>
