@@ -42,3 +42,12 @@
   align-content: center;
   margin: 0 auto;
 }
+
+/* Tailwind CSS custom classes for toggle switch */
+input:checked + label .dot {
+  transform: translateX(1rem);
+}
+
+input:checked + label .block {
+  background-color: #4b5563; /* Tailwind gray-700 */
+}

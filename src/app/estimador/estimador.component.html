@@ -6,18 +6,42 @@
   >
     <div
       class="bg-white shadow-md rounded-lg p-6 max-w-lg w-full transition-all duration-300"
-      [ngClass]="{ 'md:w-1/2': showTareasCard, 'mx-auto': !showTareasCard }"
+      [ngClass]="{
+        'md:w-1/2': showTareasCard || showFrontendTareasCard,
+        'mx-auto': !showTareasCard && !showFrontendTareasCard
+      }"
     >
-      <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">
-        Estimador de Desarrollos
-      </h1>
+      <div class="flex items-center justify-between mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">
+          Estimador de Desarrollos
+        </h1>
+        <div class="flex items-center">
+          <input
+            type="checkbox"
+            id="frontendSwitch"
+            [(ngModel)]="showFrontend"
+            class="hidden"
+          />
+          <label for="frontendSwitch" class="flex items-center cursor-pointer">
+            <div class="relative">
+              <div class="block bg-gray-300 w-10 h-6 rounded-full"></div>
+              <div
+                class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition"
+              ></div>
+            </div>
+          </label>
+          <i
+            class="fa-solid fa-info-circle ml-2"
+            title="Este switch activa las horas para desarrollo frontend."
+          ></i>
+        </div>
+      </div>
       <div class="flex items-center mb-6">
         <label
           for="desarrollo"
           class="block text-lg font-medium text-gray-700 mb-2"
+          >Backend</label
         >
-          Horas de Desarrollo
-        </label>
         <input
           type="number"
           id="desarrollo"
@@ -32,6 +56,31 @@
         >
           <i *ngIf="!showTareasCard" class="fa-solid fa-arrow-right"></i>
           <i *ngIf="showTareasCard" class="fa-solid fa-arrow-left"></i>
+        </button>
+      </div>
+      <div *ngIf="showFrontend" class="flex items-center mb-6">
+        <label
+          for="frontend"
+          class="block text-lg font-medium text-gray-700 mb-2"
+          >Frontend</label
+        >
+        <input
+          type="number"
+          id="frontend"
+          [(ngModel)]="frontendHoras"
+          (input)="calcularEstimacion()"
+          class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ml-4"
+          placeholder="Ingrese las horas de desarrollo"
+        />
+        <button
+          (click)="toggleFrontendTareasCard()"
+          class="bg-gray-300 p-2 ml-4 rounded shadow flex items-center"
+        >
+          <i
+            *ngIf="!showFrontendTareasCard"
+            class="fa-solid fa-arrow-right"
+          ></i>
+          <i *ngIf="showFrontendTareasCard" class="fa-solid fa-arrow-left"></i>
         </button>
       </div>
       <div
@@ -73,10 +122,19 @@
             <span>{{ estimaciones?.gestion }} horas</span>
           </li>
           <li class="flex justify-between font-bold text-lg">
-            <span>Total:</span>
-            <span>{{ totalHoras }} horas</span>
+            <span>Total Backend:</span>
+            <span>{{ totalBackendHoras }} horas</span>
+          </li>
+          <li class="flex justify-between font-bold text-lg">
+            <span>Total Frontend:</span>
+            <span>{{ totalFrontendHoras }} horas</span>
           </li>
         </ul>
+        <hr class="my-4" />
+        <div class="flex justify-between font-bold text-lg">
+          <span>Total:</span>
+          <span>{{ totalHoras }} horas</span>
+        </div>
         <div class="canva-style">
           <canvas
             baseChart
@@ -91,15 +149,16 @@
       *ngIf="showTareasCard"
       class="bg-white shadow-md rounded-lg p-6 w-full md:w-1/2 ml-6 transition-all"
     >
-      <h2 class="text-2xl font-semibold mb-4 text-gray-700">Agregar Tareas</h2>
+      <h2 class="text-2xl font-semibold mb-4 text-gray-700">
+        Agregar Tareas Backend
+      </h2>
       <div class="mb-4 flex items-center">
         <div class="w-3/4 mr-4">
           <label
             for="tareaNombre"
             class="block text-lg font-medium text-gray-700"
+            >Nombre de la Tarea</label
           >
-            Nombre de la Tarea
-          </label>
           <input
             type="text"
             id="tareaNombre"
@@ -112,9 +171,8 @@
           <label
             for="tareaHoras"
             class="block text-lg font-medium text-gray-700"
+            >Horas</label
           >
-            Horas
-          </label>
           <input
             type="number"
             id="tareaHoras"
@@ -133,6 +191,59 @@
       <ul class="mt-4">
         <li
           *ngFor="let tarea of tareas"
+          class="flex justify-between p-2 border-b border-gray-300"
+        >
+          <span>{{ tarea.nombre }}</span>
+          <span>{{ tarea.horas }} horas</span>
+        </li>
+      </ul>
+    </div>
+    <div
+      *ngIf="showFrontendTareasCard"
+      class="bg-white shadow-md rounded-lg p-6 w-full md:w-1/2 ml-6 transition-all"
+    >
+      <h2 class="text-2xl font-semibold mb-4 text-gray-700">
+        Agregar Tareas Frontend
+      </h2>
+      <div class="mb-4 flex items-center">
+        <div class="w-3/4 mr-4">
+          <label
+            for="tareaNombreFrontend"
+            class="block text-lg font-medium text-gray-700"
+            >Nombre de la Tarea</label
+          >
+          <input
+            type="text"
+            id="tareaNombreFrontend"
+            [(ngModel)]="tareaNombreFrontend"
+            class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+            placeholder="Ingrese el nombre de la tarea"
+          />
+        </div>
+        <div class="w-1/4">
+          <label
+            for="tareaHorasFrontend"
+            class="block text-lg font-medium text-gray-700"
+            >Horas</label
+          >
+          <input
+            type="number"
+            id="tareaHorasFrontend"
+            [(ngModel)]="tareaHorasFrontend"
+            class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+            placeholder="Horas"
+          />
+        </div>
+      </div>
+      <button
+        (click)="agregarTareaFrontend()"
+        class="bg-blue-500 text-white p-2 rounded shadow"
+      >
+        Agregar Tarea
+      </button>
+      <ul class="mt-4">
+        <li
+          *ngFor="let tarea of tareasFrontend"
           class="flex justify-between p-2 border-b border-gray-300"
         >
           <span>{{ tarea.nombre }}</span>
