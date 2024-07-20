@@ -19,6 +19,11 @@ export class EstimadorComponent {
   showEstimaciones: boolean = false;
   animatingOut: boolean = false;
 
+  showTareasCard: boolean = false;
+  tareaNombre: string = '';
+  tareaHoras: number | null = null;
+  tareas: { nombre: string; horas: number }[] = [];
+
   public pieChartLabels: string[] = [
     'Análisis Funcional',
     'Análisis Técnico',
@@ -56,13 +61,18 @@ export class EstimadorComponent {
   }
 
   calcularTotalHoras(): void {
+    let totalTareasHoras = this.tareas.reduce(
+      (acc, tarea) => acc + tarea.horas,
+      0
+    );
     if (this.estimaciones) {
-      this.totalHoras = (Object.values(this.estimaciones) as number[]).reduce(
-        (acc, val) => acc + val,
-        0
-      );
+      this.totalHoras =
+        (Object.values(this.estimaciones) as number[]).reduce(
+          (acc, val) => acc + val,
+          0
+        ) + totalTareasHoras;
     } else {
-      this.totalHoras = 0;
+      this.totalHoras = totalTareasHoras;
     }
   }
 
@@ -89,6 +99,19 @@ export class EstimadorComponent {
         labels: this.pieChartLabels,
         datasets: [{ data: [] }],
       };
+    }
+  }
+
+  toggleTareasCard(): void {
+    this.showTareasCard = !this.showTareasCard;
+  }
+
+  agregarTarea(): void {
+    if (this.tareaNombre && this.tareaHoras && this.tareaHoras > 0) {
+      this.tareas.push({ nombre: this.tareaNombre, horas: this.tareaHoras });
+      this.tareaNombre = '';
+      this.tareaHoras = null;
+      this.calcularTotalHoras();
     }
   }
 }
