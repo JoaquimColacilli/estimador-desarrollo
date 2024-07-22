@@ -1,16 +1,17 @@
-import { Component } from '@angular/core';
+import { Component, Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
 import { EstimadorService } from '../service/estimador.service';
 import { NgChartsModule } from 'ng2-charts';
 import { ChartData, ChartType } from 'chart.js';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-estimador',
   templateUrl: './estimador.component.html',
   styleUrls: ['./estimador.component.css'],
   standalone: true,
-  imports: [CommonModule, FormsModule, NgChartsModule],
+  imports: [FormsModule, NgChartsModule, CommonModule],
 })
 export class EstimadorComponent {
   desarrolloHoras: number | null = null;
@@ -30,11 +31,13 @@ export class EstimadorComponent {
   tareaNombreFrontend: string = '';
   tareaHorasFrontend: number | null = null;
   tareasFrontend: { nombre: string; horas: number }[] = [];
+  isBrowser: boolean;
 
   public pieChartLabels: string[] = [
     'Análisis Funcional',
     'Análisis Técnico',
-    'Desarrollo',
+    'Desarrollo Backend',
+    'Desarrollo Front',
     'Pruebas Unitarias',
     'Pruebas de Integración',
     'Implementación y Soporte',
@@ -46,7 +49,19 @@ export class EstimadorComponent {
   };
   public pieChartType: ChartType = 'pie';
 
-  constructor(private estimadorService: EstimadorService) {}
+  constructor(
+    private estimadorService: EstimadorService,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {
+    this.isBrowser = isPlatformBrowser(this.platformId);
+  }
+
+  handleFrontendSwitch(): void {
+    if (!this.showFrontend) {
+      this.showFrontendTareasCard = false;
+    }
+    this.calcularEstimacion();
+  }
 
   calcularEstimacion(): void {
     if (
@@ -57,7 +72,9 @@ export class EstimadorComponent {
         this.desarrolloHoras || 0
       );
       this.calcularTotalHoras();
-      this.updatePieChartData();
+      if (this.isBrowser) {
+        this.updatePieChartData();
+      }
       this.showEstimaciones = true;
     } else {
       this.animatingOut = true;
@@ -81,20 +98,37 @@ export class EstimadorComponent {
       (acc, tarea) => acc + tarea.horas,
       0
     );
+
     if (this.estimaciones) {
+      this.estimaciones.desarrolloBackend =
+        (this.desarrolloHoras ?? 0) + totalTareasHoras;
+      this.estimaciones.desarrolloFront =
+        (this.frontendHoras ?? 0) + totalTareasFrontendHoras;
+
       this.totalBackendHoras =
         (Object.values(this.estimaciones) as number[]).reduce(
           (acc, val) => acc + val,
           0
-        ) + totalTareasHoras;
-      this.totalFrontendHoras =
-        (this.frontendHoras ?? 0) + totalTareasFrontendHoras;
+        ) - this.estimaciones.desarrolloFront;
+
+      if (!this.showFrontend) {
+        this.totalFrontendHoras = 0;
+      } else {
+        this.totalFrontendHoras = this.estimaciones.desarrolloFront;
+      }
+
       this.totalHoras = this.totalBackendHoras + this.totalFrontendHoras;
     } else {
       this.totalBackendHoras = totalTareasHoras;
-      this.totalFrontendHoras =
-        (this.frontendHoras ?? 0) + totalTareasFrontendHoras;
-      this.totalHoras = totalTareasHoras + this.totalFrontendHoras;
+      this.totalFrontendHoras = this.frontendHoras
+        ? this.frontendHoras + totalTareasFrontendHoras
+        : totalTareasFrontendHoras;
+
+      if (!this.showFrontend) {
+        this.totalFrontendHoras = 0;
+      }
+
+      this.totalHoras = this.totalBackendHoras + this.totalFrontendHoras;
     }
   }
 
@@ -107,7 +141,8 @@ export class EstimadorComponent {
             data: [
               this.estimaciones.analisisFuncional,
               this.estimaciones.analisisTecnico,
-              this.estimaciones.desarrollo,
+              this.estimaciones.desarrolloBackend,
+              this.estimaciones.desarrolloFront,
               this.estimaciones.pruebasUnitarias,
               this.estimaciones.pruebasIntegracion,
               this.estimaciones.implementacionYSoporte,
@@ -132,17 +167,24 @@ export class EstimadorComponent {
     this.showFrontendTareasCard = !this.showFrontendTareasCard;
   }
 
-  agregarTarea(): void {
-    if (this.tareaNombre && this.tareaHoras && this.tareaHoras > 0) {
+  agregarTarea(type: 'backend' | 'frontend'): void {
+    if (
+      type === 'backend' &&
+      this.tareaNombre &&
+      this.tareaHoras &&
+      this.tareaHoras > 0
+    ) {
       this.tareas.push({ nombre: this.tareaNombre, horas: this.tareaHoras });
       this.tareaNombre = '';
       this.tareaHoras = null;
+      this.estimaciones.desarrolloBackend += this.tareas.reduce(
+        (acc, tarea) => acc + tarea.horas,
+        0
+      );
       this.calcularTotalHoras();
-    }
-  }
-
-  agregarTareaFrontend(): void {
-    if (
+      this.updatePieChartData();
+    } else if (
+      type === 'frontend' &&
       this.tareaNombreFrontend &&
       this.tareaHorasFrontend &&
       this.tareaHorasFrontend > 0
@@ -153,7 +195,26 @@ export class EstimadorComponent {
       });
       this.tareaNombreFrontend = '';
       this.tareaHorasFrontend = null;
+      this.estimaciones.desarrolloFront += this.tareasFrontend.reduce(
+        (acc, tarea) => acc + tarea.horas,
+        0
+      );
       this.calcularTotalHoras();
+      this.updatePieChartData();
     }
+  }
+
+  eliminarTarea(type: 'backend' | 'frontend', index: number): void {
+    if (type === 'backend') {
+      const removedHours = this.tareas[index].horas;
+      this.tareas.splice(index, 1);
+      this.estimaciones.desarrolloBackend -= removedHours;
+    } else if (type === 'frontend') {
+      const removedHours = this.tareasFrontend[index].horas;
+      this.tareasFrontend.splice(index, 1);
+      this.estimaciones.desarrolloFront -= removedHours;
+    }
+    this.calcularTotalHoras();
+    this.updatePieChartData();
   }
 }

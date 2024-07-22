@@ -2,7 +2,7 @@
   class="min-h-screen flex flex-col justify-center items-center bg-gray-100 p-4"
 >
   <div
-    class="flex flex-col md:flex-row items-start w-full max-w-4xl transition-all duration-500"
+    class="flex flex-col md:flex-row items-start w-full max-w-7xl transition-all duration-500"
   >
     <div
       class="bg-white shadow-md rounded-lg p-6 max-w-lg w-full transition-all duration-300"
@@ -20,6 +20,7 @@
             type="checkbox"
             id="frontendSwitch"
             [(ngModel)]="showFrontend"
+            (change)="handleFrontendSwitch()"
             class="hidden"
           />
           <label for="frontendSwitch" class="flex items-center cursor-pointer">
@@ -84,7 +85,7 @@
         </button>
       </div>
       <div
-        *ngIf="showEstimaciones || animatingOut"
+        *ngIf="showEstimaciones"
         [ngClass]="{
           'animate-slideInDown': showEstimaciones && !animatingOut,
           'animate-slideOutUp': animatingOut
@@ -102,8 +103,12 @@
             <span>{{ estimaciones?.analisisTecnico }} horas</span>
           </li>
           <li class="flex justify-between">
-            <span>Desarrollo:</span>
-            <span>{{ estimaciones?.desarrollo }} horas</span>
+            <span>Desarrollo Backend:</span>
+            <span>{{ estimaciones?.desarrolloBackend }} horas</span>
+          </li>
+          <li class="flex justify-between">
+            <span>Desarrollo Front:</span>
+            <span>{{ estimaciones?.desarrolloFront }} horas</span>
           </li>
           <li class="flex justify-between">
             <span>Pruebas Unitarias:</span>
@@ -135,16 +140,9 @@
           <span>Total:</span>
           <span>{{ totalHoras }} horas</span>
         </div>
-        <div class="canva-style">
-          <canvas
-            baseChart
-            [data]="pieChartData"
-            [labels]="pieChartLabels"
-            [type]="pieChartType"
-          ></canvas>
-        </div>
       </div>
     </div>
+
     <div
       *ngIf="showTareasCard"
       class="bg-white shadow-md rounded-lg p-6 w-full md:w-1/2 ml-6 transition-all"
@@ -183,21 +181,25 @@
         </div>
       </div>
       <button
-        (click)="agregarTarea()"
-        class="bg-blue-500 text-white p-2 rounded shadow"
+        (click)="agregarTarea('backend')"
+        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
       >
-        Agregar Tarea
+        Agregar
       </button>
       <ul class="mt-4">
         <li
-          *ngFor="let tarea of tareas"
-          class="flex justify-between p-2 border-b border-gray-300"
+          *ngFor="let tarea of tareas; let i = index"
+          class="flex justify-between p-2 border-b border-gray-300 items-center"
         >
           <span>{{ tarea.nombre }}</span>
           <span>{{ tarea.horas }} horas</span>
+          <button (click)="eliminarTarea('backend', i)">
+            <i class="fa fa-trash"></i>
+          </button>
         </li>
       </ul>
     </div>
+
     <div
       *ngIf="showFrontendTareasCard"
       class="bg-white shadow-md rounded-lg p-6 w-full md:w-1/2 ml-6 transition-all"
@@ -236,20 +238,33 @@
         </div>
       </div>
       <button
-        (click)="agregarTareaFrontend()"
-        class="bg-blue-500 text-white p-2 rounded shadow"
+        (click)="agregarTarea('frontend')"
+        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
       >
-        Agregar Tarea
+        Agregar
       </button>
       <ul class="mt-4">
         <li
-          *ngFor="let tarea of tareasFrontend"
-          class="flex justify-between p-2 border-b border-gray-300"
+          *ngFor="let tarea of tareasFrontend; let i = index"
+          class="flex justify-between p-2 border-b border-gray-300 items-center"
         >
           <span>{{ tarea.nombre }}</span>
           <span>{{ tarea.horas }} horas</span>
+          <button (click)="eliminarTarea('frontend', i)">
+            <i class="fa fa-trash"></i>
+          </button>
         </li>
       </ul>
     </div>
+  </div>
+
+  <div class="canva-style mt-8 w-full max-w-7xl">
+    <canvas
+      *ngIf="isBrowser"
+      baseChart
+      [data]="pieChartData"
+      [labels]="pieChartLabels"
+      [type]="pieChartType"
+    ></canvas>
   </div>
 </div>

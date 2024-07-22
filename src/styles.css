@@ -30,24 +30,43 @@
 }
 
 .animate-slideOutUp {
-  animation: slideOutUp 0.5s ;
+  animation: slideOutUp 0.5s;
 }
 
-.canva-style{
+.canva-style {
   display: flex;
-  width: 350px;
-  height: 350px;
+  width: 400px;
+  height: 400px;
   justify-content: center;
   align-items: center;
   align-content: center;
   margin: 0 auto;
 }
 
-/* Tailwind CSS custom classes for toggle switch */
 input:checked + label .dot {
   transform: translateX(1rem);
 }
 
 input:checked + label .block {
-  background-color: #4b5563; /* Tailwind gray-700 */
+  background-color: #4b5563; 
+}
+
+/* Nuevo estilo para el botón "Agregar Tarea" */
+button {
+  background-color: #007BFF; /* Color de fondo azul */
+  border: none; /* Sin borde */
+  color: white; /* Texto blanco */
+  padding: 12px 24px; /* Padding */
+  text-align: center; /* Alinear texto al centro */
+  text-decoration: none; /* Sin subrayado */
+  display: inline-block; /* Inline-block */
+  font-size: 16px; /* Tamaño de fuente */
+  margin: 4px 2px; /* Márgenes */
+  cursor: pointer; /* Cambiar cursor al pasar por encima */
+  border-radius: 12px; /* Bordes redondeados */
+  transition: background-color 0.3s ease; /* Transición suave para el fondo */
+}
+
+button:hover {
+  background-color: #0056b3; /* Color de fondo al pasar el ratón */
 }
