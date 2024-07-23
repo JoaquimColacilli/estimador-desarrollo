@@ -2,16 +2,16 @@
   class="min-h-screen flex flex-col justify-center items-center bg-gray-100 p-4"
 >
   <div
-    class="flex flex-col md:flex-row items-start w-full max-w-7xl transition-all duration-500"
+    class="flex flex-col md:flex-row items-start w-full max-w-7xl transition-all duration-500 h-full"
   >
     <div
-      class="bg-white shadow-md rounded-lg p-6 max-w-lg w-full transition-all duration-300"
+      class="bg-white shadow-md rounded-lg p-6 max-w-lg w-full transition-all duration-300 flex-grow"
       [ngClass]="{
         'md:w-1/2': showTareasCard || showFrontendTareasCard,
         'mx-auto': !showTareasCard && !showFrontendTareasCard
       }"
     >
-      <div class="flex items-center justify-between mb-6">
+      <div class="flex items-center justify-between mb-2">
         <h1 class="text-3xl font-bold text-gray-800">
           Estimador de Desarrollos
         </h1>
@@ -37,7 +37,7 @@
           ></i>
         </div>
       </div>
-      <div class="flex items-center mb-6">
+      <div class="flex items-center mb-2">
         <label
           for="desarrollo"
           class="block text-lg font-medium text-gray-700 mb-2"
@@ -50,6 +50,7 @@
           (input)="calcularEstimacion()"
           class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ml-4"
           placeholder="Ingrese las horas de desarrollo"
+          [disabled]="showTareasCard"
         />
         <button
           (click)="toggleTareasCard()"
@@ -59,7 +60,7 @@
           <i *ngIf="showTareasCard" class="fa-solid fa-arrow-left"></i>
         </button>
       </div>
-      <div *ngIf="showFrontend" class="flex items-center mb-6">
+      <div *ngIf="showFrontend" class="flex items-center mb-2">
         <label
           for="frontend"
           class="block text-lg font-medium text-gray-700 mb-2"
@@ -72,6 +73,7 @@
           (input)="calcularEstimacion()"
           class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ml-4"
           placeholder="Ingrese las horas de desarrollo"
+          [disabled]="showFrontendTareasCard"
         />
         <button
           (click)="toggleFrontendTareasCard()"
@@ -85,15 +87,20 @@
         </button>
       </div>
       <div
-        *ngIf="showEstimaciones"
+        *ngIf="
+          showEstimaciones ||
+          (tareas.length > 0 && showTareasCard) ||
+          (tareasFrontend.length > 0 && showFrontendTareasCard)
+        "
         [ngClass]="{
           'animate-slideInDown': showEstimaciones && !animatingOut,
-          'animate-slideOutUp': animatingOut
+          'animate-slideOutUp':
+            animatingOut && !showFrontendTareasCard && !showTareasCard
         }"
-        class="bg-gray-50 p-4 rounded-lg overflow-hidden"
+        class="bg-gray-50 p-4 rounded-lg overflow-hidden flex-grow"
       >
-        <h2 class="text-2xl font-semibold mb-4 text-gray-700">Cálculo:</h2>
-        <ul class="space-y-2 mb-4">
+        <h2 class="text-2xl font-semibold mb-2 text-gray-700">Cálculo:</h2>
+        <ul class="space-y-2 mb-2">
           <li class="flex justify-between">
             <span>Análisis Funcional:</span>
             <span>{{ estimaciones?.analisisFuncional }} horas</span>
@@ -140,17 +147,38 @@
           <span>Total:</span>
           <span>{{ totalHoras }} horas</span>
         </div>
+        <div
+          [ngClass]="{
+            'canva-style-1': showTareasCard && showFrontendTareasCard,
+            'canva-style-2':
+              (showTareasCard && !showFrontendTareasCard) ||
+              (!showTareasCard && showFrontendTareasCard),
+            'canva-style-3':
+              !showTareasCard && !showFrontendTareasCard && !showFrontend,
+            'canva-style-4':
+              !showTareasCard && !showFrontendTareasCard && showFrontend
+          }"
+          class="canva-style w-full max-w-7xl"
+        >
+          <canvas
+            *ngIf="isBrowser"
+            baseChart
+            [data]="pieChartData"
+            [labels]="pieChartLabels"
+            [type]="pieChartType"
+          ></canvas>
+        </div>
       </div>
     </div>
 
     <div
       *ngIf="showTareasCard"
-      class="bg-white shadow-md rounded-lg p-6 w-full md:w-1/2 ml-6 transition-all"
+      class="bg-white shadow-md rounded-lg p-6 w-full md:w-1/2 ml-6 transition-all h-full flex flex-col"
     >
-      <h2 class="text-2xl font-semibold mb-4 text-gray-700">
+      <h2 class="text-2xl font-semibold mb-2 text-gray-700">
         Agregar Tareas Backend
       </h2>
-      <div class="mb-4 flex items-center">
+      <div class="mb-2 flex items-center">
         <div class="w-3/4 mr-4">
           <label
             for="tareaNombre"
@@ -186,7 +214,7 @@
       >
         Agregar
       </button>
-      <ul class="mt-4">
+      <ul class="flex-grow overflow-y-auto">
         <li
           *ngFor="let tarea of tareas; let i = index"
           class="flex justify-between p-2 border-b border-gray-300 items-center"
@@ -194,7 +222,7 @@
           <span>{{ tarea.nombre }}</span>
           <span>{{ tarea.horas }} horas</span>
           <button (click)="eliminarTarea('backend', i)">
-            <i class="fa fa-trash"></i>
+            <i class="fa fa-trash eliminar-button"></i>
           </button>
         </li>
       </ul>
@@ -202,12 +230,12 @@
 
     <div
       *ngIf="showFrontendTareasCard"
-      class="bg-white shadow-md rounded-lg p-6 w-full md:w-1/2 ml-6 transition-all"
+      class="bg-white shadow-md rounded-lg p-6 w-full md:w-1/2 ml-6 transition-all h-full flex flex-col"
     >
-      <h2 class="text-2xl font-semibold mb-4 text-gray-700">
+      <h2 class="text-2xl font-semibold mb-2 text-gray-700">
         Agregar Tareas Frontend
       </h2>
-      <div class="mb-4 flex items-center">
+      <div class="mb-2 flex items-center">
         <div class="w-3/4 mr-4">
           <label
             for="tareaNombreFrontend"
@@ -243,7 +271,7 @@
       >
         Agregar
       </button>
-      <ul class="mt-4">
+      <ul class="flex-grow overflow-y-auto">
         <li
           *ngFor="let tarea of tareasFrontend; let i = index"
           class="flex justify-between p-2 border-b border-gray-300 items-center"
@@ -251,20 +279,10 @@
           <span>{{ tarea.nombre }}</span>
           <span>{{ tarea.horas }} horas</span>
           <button (click)="eliminarTarea('frontend', i)">
-            <i class="fa fa-trash"></i>
+            <i class="fa fa-trash eliminar-button"></i>
           </button>
         </li>
       </ul>
     </div>
-  </div>
-
-  <div class="canva-style mt-8 w-full max-w-7xl">
-    <canvas
-      *ngIf="isBrowser"
-      baseChart
-      [data]="pieChartData"
-      [labels]="pieChartLabels"
-      [type]="pieChartType"
-    ></canvas>
   </div>
 </div>
