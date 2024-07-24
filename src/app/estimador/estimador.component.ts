@@ -59,19 +59,19 @@ export class EstimadorComponent implements OnInit {
 
   handleFrontendSwitch(): void {
     if (!this.showFrontend) {
+      this.frontendHoras = 0;
       this.showFrontendTareasCard = false;
     }
     this.calcularEstimacion();
   }
 
   calcularEstimacion(): void {
-    if (
-      (this.desarrolloHoras && this.desarrolloHoras > 0) ||
-      (this.frontendHoras && this.frontendHoras > 0)
-    ) {
-      this.estimaciones = this.estimadorService.calcularEstimaciones(
-        this.desarrolloHoras || 0
-      );
+    const backendHoras = this.desarrolloHoras || 0;
+    const frontendHoras = this.frontendHoras || 0;
+
+    if (backendHoras > 0 || frontendHoras > 0) {
+      this.estimaciones =
+        this.estimadorService.calcularEstimaciones(backendHoras);
       this.calcularTotalHoras();
       if (this.isBrowser) {
         this.updatePieChartData();
@@ -100,6 +100,13 @@ export class EstimadorComponent implements OnInit {
 
     let desarrolloBackendHoras = this.desarrolloHoras ?? 0;
     let desarrolloFrontHoras = this.frontendHoras ?? 0;
+
+    if (!this.showTareasCard) {
+      totalTareasHoras = 0;
+    }
+    if (!this.showFrontendTareasCard) {
+      totalTareasFrontendHoras = 0;
+    }
 
     this.totalBackendHoras = desarrolloBackendHoras + totalTareasHoras;
     this.totalFrontendHoras = this.showFrontend
@@ -140,7 +147,16 @@ export class EstimadorComponent implements OnInit {
     this.showTareasCard = !this.showTareasCard;
     if (this.showTareasCard) {
       this.desarrolloHoras = null;
-      console.log(this.desarrolloHoras);
+      this.estimaciones = {
+        analisisFuncional: 0,
+        analisisTecnico: 0,
+        desarrolloBackend: 0,
+        desarrolloFront: 0,
+        pruebasUnitarias: 0,
+        pruebasIntegracion: 0,
+        implementacionYSoporte: 0,
+        gestion: 0,
+      };
     }
     this.calcularTotalHoras();
   }
@@ -149,6 +165,16 @@ export class EstimadorComponent implements OnInit {
     this.showFrontendTareasCard = !this.showFrontendTareasCard;
     if (this.showFrontendTareasCard) {
       this.frontendHoras = null;
+      this.estimaciones = {
+        analisisFuncional: 0,
+        analisisTecnico: 0,
+        desarrolloBackend: 0,
+        desarrolloFront: 0,
+        pruebasUnitarias: 0,
+        pruebasIntegracion: 0,
+        implementacionYSoporte: 0,
+        gestion: 0,
+      };
     }
     this.calcularTotalHoras();
   }
