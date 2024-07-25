@@ -55,23 +55,33 @@ export class EstimadorComponent implements OnInit {
   ) {
     this.isBrowser = isPlatformBrowser(this.platformId);
   }
+
   ngOnInit(): void {}
 
   handleFrontendSwitch(): void {
     if (!this.showFrontend) {
-      this.frontendHoras = 0;
+      this.frontendHoras = null;
       this.showFrontendTareasCard = false;
     }
     this.calcularEstimacion();
   }
 
   calcularEstimacion(): void {
-    const backendHoras = this.desarrolloHoras || 0;
+    const totalBackendHoras =
+      (this.desarrolloHoras || 0) +
+      (this.showTareasCard
+        ? this.tareas.reduce((acc, tarea) => acc + tarea.horas, 0)
+        : 0);
     const frontendHoras = this.frontendHoras || 0;
 
-    if (backendHoras > 0 || frontendHoras > 0) {
+    if (
+      totalBackendHoras > 0 ||
+      frontendHoras > 0 ||
+      this.tareas.length > 0 ||
+      this.tareasFrontend.length > 0
+    ) {
       this.estimaciones =
-        this.estimadorService.calcularEstimaciones(backendHoras);
+        this.estimadorService.calcularEstimaciones(totalBackendHoras);
       this.calcularTotalHoras();
       if (this.isBrowser) {
         this.updatePieChartData();
@@ -91,22 +101,15 @@ export class EstimadorComponent implements OnInit {
   }
 
   calcularTotalHoras(): void {
-    let totalTareasHoras = this.showTareasCard
+    const totalTareasHoras = this.showTareasCard
       ? this.tareas.reduce((acc, tarea) => acc + tarea.horas, 0)
       : 0;
-    let totalTareasFrontendHoras = this.showFrontendTareasCard
+    const totalTareasFrontendHoras = this.showFrontendTareasCard
       ? this.tareasFrontend.reduce((acc, tarea) => acc + tarea.horas, 0)
       : 0;
 
-    let desarrolloBackendHoras = this.desarrolloHoras ?? 0;
-    let desarrolloFrontHoras = this.frontendHoras ?? 0;
-
-    if (!this.showTareasCard) {
-      totalTareasHoras = 0;
-    }
-    if (!this.showFrontendTareasCard) {
-      totalTareasFrontendHoras = 0;
-    }
+    const desarrolloBackendHoras = this.desarrolloHoras ?? 0;
+    const desarrolloFrontHoras = this.frontendHoras ?? 0;
 
     this.totalBackendHoras = desarrolloBackendHoras + totalTareasHoras;
     this.totalFrontendHoras = this.showFrontend
@@ -114,6 +117,19 @@ export class EstimadorComponent implements OnInit {
       : 0;
 
     this.totalHoras = this.totalBackendHoras + this.totalFrontendHoras;
+
+    if (this.estimaciones) {
+      this.estimaciones.desarrolloBackend = this.totalBackendHoras;
+      this.estimaciones.desarrolloFront = this.totalFrontendHoras;
+
+      // Recalcular estimaciones con las horas de las tareas backend incluidas
+      const totalBackendHorasWithTareas =
+        this.desarrolloHoras! + totalTareasHoras;
+      this.estimaciones = this.estimadorService.calcularEstimaciones(
+        totalBackendHorasWithTareas
+      );
+      this.estimaciones.desarrolloBackend = this.totalBackendHoras;
+    }
   }
 
   updatePieChartData(): void {
@@ -147,16 +163,7 @@ export class EstimadorComponent implements OnInit {
     this.showTareasCard = !this.showTareasCard;
     if (this.showTareasCard) {
       this.desarrolloHoras = null;
-      this.estimaciones = {
-        analisisFuncional: 0,
-        analisisTecnico: 0,
-        desarrolloBackend: 0,
-        desarrolloFront: 0,
-        pruebasUnitarias: 0,
-        pruebasIntegracion: 0,
-        implementacionYSoporte: 0,
-        gestion: 0,
-      };
+      this.estimaciones = null;
     }
     this.calcularTotalHoras();
   }
@@ -165,16 +172,7 @@ export class EstimadorComponent implements OnInit {
     this.showFrontendTareasCard = !this.showFrontendTareasCard;
     if (this.showFrontendTareasCard) {
       this.frontendHoras = null;
-      this.estimaciones = {
-        analisisFuncional: 0,
-        analisisTecnico: 0,
-        desarrolloBackend: 0,
-        desarrolloFront: 0,
-        pruebasUnitarias: 0,
-        pruebasIntegracion: 0,
-        implementacionYSoporte: 0,
-        gestion: 0,
-      };
+      this.estimaciones = null;
     }
     this.calcularTotalHoras();
   }
@@ -202,10 +200,6 @@ export class EstimadorComponent implements OnInit {
       this.tareas.push({ nombre: this.tareaNombre, horas: this.tareaHoras });
       this.tareaNombre = '';
       this.tareaHoras = null;
-      this.estimaciones.desarrolloBackend = this.tareas.reduce(
-        (acc, tarea) => acc + tarea.horas,
-        0
-      );
 
       this.calcularTotalHoras();
       this.updatePieChartData();
@@ -221,10 +215,7 @@ export class EstimadorComponent implements OnInit {
       });
       this.tareaNombreFrontend = '';
       this.tareaHorasFrontend = null;
-      this.estimaciones.desarrolloFront = this.tareasFrontend.reduce(
-        (acc, tarea) => acc + tarea.horas,
-        0
-      );
+
       this.calcularTotalHoras();
       this.updatePieChartData();
     }
@@ -232,13 +223,9 @@ export class EstimadorComponent implements OnInit {
 
   eliminarTarea(type: 'backend' | 'frontend', index: number): void {
     if (type === 'backend') {
-      const removedHours = this.tareas[index].horas;
       this.tareas.splice(index, 1);
-      this.estimaciones.desarrolloBackend -= removedHours;
     } else if (type === 'frontend') {
-      const removedHours = this.tareasFrontend[index].horas;
       this.tareasFrontend.splice(index, 1);
-      this.estimaciones.desarrolloFront -= removedHours;
     }
     this.calcularTotalHoras();
     this.updatePieChartData();

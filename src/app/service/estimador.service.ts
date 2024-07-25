@@ -15,7 +15,7 @@ export class EstimadorService {
     return {
       analisisFuncional,
       analisisTecnico,
-      desarrollo: Math.round(desarrolloHoras),
+      desarrolloBackend: Math.round(desarrolloHoras),
       pruebasUnitarias,
       pruebasIntegracion,
       implementacionYSoporte,
