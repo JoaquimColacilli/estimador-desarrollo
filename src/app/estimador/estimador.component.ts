@@ -6,6 +6,58 @@ import { NgChartsModule } from 'ng2-charts';
 import { ChartData, ChartType } from 'chart.js';
 import { CommonModule } from '@angular/common';
 
+interface CampoEstimacion {
+  key: string;
+  label: string;
+  porcentaje: number;
+  horas: number | null;
+  modo: 'porcentaje' | 'horas';
+}
+const DEFAULT_VALORES: CampoEstimacion[] = [
+  {
+    key: 'analisisFuncional',
+    label: 'Análisis Funcional',
+    porcentaje: 10,
+    horas: null,
+    modo: 'porcentaje',
+  },
+  {
+    key: 'analisisTecnico',
+    label: 'Análisis Técnico',
+    porcentaje: 10,
+    horas: null,
+    modo: 'porcentaje',
+  },
+  {
+    key: 'pruebasUnitarias',
+    label: 'Pruebas Unitarias',
+    porcentaje: 10,
+    horas: null,
+    modo: 'porcentaje',
+  },
+  {
+    key: 'pruebasIntegracion',
+    label: 'Pruebas de Integración',
+    porcentaje: 10,
+    horas: null,
+    modo: 'porcentaje',
+  },
+  {
+    key: 'implementacionYSoporte',
+    label: 'Implementación y Soporte',
+    porcentaje: 15,
+    horas: null,
+    modo: 'porcentaje',
+  },
+  {
+    key: 'gestion',
+    label: 'Gestión',
+    porcentaje: 15,
+    horas: null,
+    modo: 'porcentaje',
+  },
+];
+
 @Component({
   selector: 'app-estimador',
   templateUrl: './estimador.component.html',
@@ -32,6 +84,9 @@ export class EstimadorComponent implements OnInit {
   tareaHorasFrontend: number | null = null;
   tareasFrontend: { nombre: string; horas: number }[] = [];
   isBrowser: boolean;
+  showConfiguracion: boolean = false;
+
+  camposEstimacion: CampoEstimacion[] = [...DEFAULT_VALORES];
 
   public pieChartLabels: string[] = [
     'Análisis Funcional',
@@ -66,6 +121,38 @@ export class EstimadorComponent implements OnInit {
     this.calcularEstimacion();
   }
 
+  toggleConfiguracion(): void {
+    this.showConfiguracion = !this.showConfiguracion;
+  }
+
+  guardarConfiguracion(): void {
+    this.calcularEstimacion();
+    this.toggleConfiguracion();
+  }
+
+  updateEstimaciones(): void {
+    this.calcularEstimacion();
+  }
+
+  reestablecerValores(): void {
+    this.camposEstimacion = JSON.parse(JSON.stringify(DEFAULT_VALORES));
+    this.updateEstimaciones();
+  }
+
+  isValidConfiguration(): boolean {
+    return this.camposEstimacion.every((campo) => {
+      if (campo.modo === 'porcentaje') {
+        return (
+          campo.porcentaje !== null &&
+          campo.porcentaje >= 0 &&
+          campo.porcentaje <= 100
+        );
+      } else {
+        return campo.horas !== null && campo.horas >= 0;
+      }
+    });
+  }
+
   calcularEstimacion(): void {
     const totalBackendHoras =
       (this.desarrolloHoras || 0) +
@@ -80,8 +167,6 @@ export class EstimadorComponent implements OnInit {
       this.tareas.length > 0 ||
       this.tareasFrontend.length > 0
     ) {
-      this.estimaciones =
-        this.estimadorService.calcularEstimaciones(totalBackendHoras);
       this.calcularTotalHoras();
       if (this.isBrowser) {
         this.updatePieChartData();
@@ -118,18 +203,30 @@ export class EstimadorComponent implements OnInit {
 
     this.totalHoras = this.totalBackendHoras + this.totalFrontendHoras;
 
-    if (this.estimaciones) {
-      this.estimaciones.desarrolloBackend = this.totalBackendHoras;
-      this.estimaciones.desarrolloFront = this.totalFrontendHoras;
-
-      // Recalcular estimaciones con las horas de las tareas backend incluidas
-      const totalBackendHorasWithTareas =
-        this.desarrolloHoras! + totalTareasHoras;
-      this.estimaciones = this.estimadorService.calcularEstimaciones(
-        totalBackendHorasWithTareas
-      );
-      this.estimaciones.desarrolloBackend = this.totalBackendHoras;
+    if (!this.estimaciones) {
+      this.estimaciones = {};
     }
+
+    this.camposEstimacion.forEach((campo) => {
+      if (campo.modo === 'porcentaje') {
+        this.estimaciones[campo.key] = Math.round(
+          (this.totalBackendHoras * campo.porcentaje) / 100
+        );
+      } else {
+        this.estimaciones[campo.key] = campo.horas ?? 0;
+      }
+    });
+
+    this.estimaciones.desarrolloBackend = this.totalBackendHoras;
+    this.estimaciones.desarrolloFront = this.totalFrontendHoras;
+
+    this.totalHoras =
+      this.totalBackendHoras +
+      this.totalFrontendHoras +
+      this.camposEstimacion.reduce(
+        (acc, campo) => acc + (this.estimaciones[campo.key] || 0),
+        0
+      );
   }
 
   updatePieChartData(): void {
@@ -141,8 +238,8 @@ export class EstimadorComponent implements OnInit {
             data: [
               this.estimaciones.analisisFuncional,
               this.estimaciones.analisisTecnico,
-              this.totalBackendHoras,
-              this.totalFrontendHoras,
+              this.estimaciones.desarrolloBackend,
+              this.estimaciones.desarrolloFront,
               this.estimaciones.pruebasUnitarias,
               this.estimaciones.pruebasIntegracion,
               this.estimaciones.implementacionYSoporte,
