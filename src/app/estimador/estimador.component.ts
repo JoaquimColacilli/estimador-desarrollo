@@ -193,8 +193,6 @@ export class EstimadorComponent implements OnInit {
       ? desarrolloFrontHoras + totalTareasFrontendHoras
       : 0;
 
-    this.totalHoras = this.totalBackendHoras + this.totalFrontendHoras;
-
     if (!this.estimaciones) {
       this.estimaciones = {};
     }
@@ -241,6 +239,11 @@ export class EstimadorComponent implements OnInit {
     this.estimaciones.desarrolloFront = this.totalFrontendHoras;
     this.estimaciones.desarrolloTotal =
       this.totalBackendHoras + this.totalFrontendHoras;
+
+    // Sumar todas las horas para calcular el total general
+    this.totalHoras = Object.keys(this.estimaciones)
+      .filter((key) => key.endsWith('Total'))
+      .reduce((acc, key) => acc + (this.estimaciones[key] || 0), 0);
   }
 
   updatePieChartData(): void {
