@@ -98,52 +98,108 @@
             (click)="toggleConfiguracion()"
           ></i>
         </div>
+
+        <!-- Encabezado de columnas para H.Back, H.Front y Total -->
+        <div class="flex justify-between mb-2">
+          <span class="flex-grow text-left"></span>
+          <!-- Espacio para alinear los títulos -->
+          <span class="w-20 text-right font-bold">H.Back</span>
+          <span class="w-20 text-right font-bold">H.Front</span>
+          <span class="w-20 text-right font-bold">Total</span>
+        </div>
+
+        <!-- Filas con los títulos y valores calculados -->
         <ul class="space-y-2 mb-4">
           <li class="flex justify-between items-center">
-            <span>Análisis Funcional:</span>
-            <span>{{ estimaciones?.analisisFuncional }} horas</span>
+            <span class="flex-grow text-left">Análisis Funcional:</span>
+            <span class="w-20 text-right"
+              >{{ estimaciones?.analisisFuncionalBack }} Hs.</span
+            >
+            <span class="w-20 text-right"
+              >{{ estimaciones?.analisisFuncionalFront }} Hs.</span
+            >
+            <span class="w-20 text-right"
+              >{{ estimaciones?.analisisFuncionalTotal }} Hs.</span
+            >
           </li>
           <li class="flex justify-between items-center">
-            <span>Análisis Técnico:</span>
-            <span>{{ estimaciones?.analisisTecnico }} horas</span>
+            <span class="flex-grow text-left">Análisis Técnico:</span>
+            <span class="w-20 text-right"
+              >{{ estimaciones?.analisisTecnicoBack }} Hs.</span
+            >
+            <span class="w-20 text-right"
+              >{{ estimaciones?.analisisTecnicoFront }} Hs.</span
+            >
+            <span class="w-20 text-right"
+              >{{ estimaciones?.analisisTecnicoTotal }} Hs.</span
+            >
           </li>
           <li class="flex justify-between items-center">
-            <span>Desarrollo Backend:</span>
-            <span>{{ estimaciones?.desarrolloBackend }} horas</span>
+            <span class="flex-grow text-left">Pruebas Unitarias:</span>
+            <span class="w-20 text-right"
+              >{{ estimaciones?.pruebasUnitariasBack }} Hs.</span
+            >
+            <span class="w-20 text-right"
+              >{{ estimaciones?.pruebasUnitariasFront }} Hs.</span
+            >
+            <span class="w-20 text-right"
+              >{{ estimaciones?.pruebasUnitariasTotal }} Hs.</span
+            >
           </li>
           <li class="flex justify-between items-center">
-            <span>Desarrollo Front:</span>
-            <span>{{ estimaciones?.desarrolloFront }} horas</span>
+            <span class="flex-grow text-left">Pruebas de Integración:</span>
+            <span class="w-20 text-right"
+              >{{ estimaciones?.pruebasIntegracionBack }} Hs.</span
+            >
+            <span class="w-20 text-right"
+              >{{ estimaciones?.pruebasIntegracionFront }} Hs.</span
+            >
+            <span class="w-20 text-right"
+              >{{ estimaciones?.pruebasIntegracionTotal }} Hs.</span
+            >
           </li>
           <li class="flex justify-between items-center">
-            <span>Pruebas Unitarias:</span>
-            <span>{{ estimaciones?.pruebasUnitarias }} horas</span>
+            <span class="flex-grow text-left">Implementación y Soporte:</span>
+            <span class="w-20 text-right"
+              >{{ estimaciones?.implementacionYSoporteBack }} Hs.</span
+            >
+            <span class="w-20 text-right"
+              >{{ estimaciones?.implementacionYSoporteFront }} Hs.</span
+            >
+            <span class="w-20 text-right"
+              >{{ estimaciones?.implementacionYSoporteTotal }} Hs.</span
+            >
           </li>
           <li class="flex justify-between items-center">
-            <span>Pruebas de Integración:</span>
-            <span>{{ estimaciones?.pruebasIntegracion }} horas</span>
+            <span class="flex-grow text-left">Gestión:</span>
+            <span class="w-20 text-right"
+              >{{ estimaciones?.gestionBack }} Hs.</span
+            >
+            <span class="w-20 text-right"
+              >{{ estimaciones?.gestionFront }} Hs.</span
+            >
+            <span class="w-20 text-right"
+              >{{ estimaciones?.gestionTotal }} Hs.</span
+            >
           </li>
           <li class="flex justify-between items-center">
-            <span>Implementación y Soporte:</span>
-            <span>{{ estimaciones?.implementacionYSoporte }} horas</span>
-          </li>
-          <li class="flex justify-between items-center">
-            <span>Gestión:</span>
-            <span>{{ estimaciones?.gestion }} horas</span>
-          </li>
-          <li class="flex justify-between font-bold text-lg">
-            <span>Total Backend:</span>
-            <span>{{ totalBackendHoras }} horas</span>
-          </li>
-          <li class="flex justify-between font-bold text-lg">
-            <span>Total Frontend:</span>
-            <span>{{ totalFrontendHoras }} horas</span>
+            <span class="flex-grow text-left">Desarrollo:</span>
+            <span class="w-20 text-right"
+              >{{ estimaciones?.desarrolloBackend }} Hs.</span
+            >
+            <span class="w-20 text-right"
+              >{{ estimaciones?.desarrolloFront }} Hs.</span
+            >
+            <span class="w-20 text-right"
+              >{{ estimaciones?.desarrolloTotal }} Hs.</span
+            >
           </li>
         </ul>
+
         <hr class="my-4" />
         <div class="flex justify-between font-bold text-lg">
           <span>Total:</span>
-          <span>{{ totalHoras }} horas</span>
+          <span>{{ totalHoras }} Horas</span>
         </div>
         <div class="canva-style mt-6">
           <canvas
@@ -299,7 +355,7 @@
           class="flex justify-between p-2 border-b border-gray-300 items-center"
         >
           <span>{{ tarea.nombre }}</span>
-          <span>{{ tarea.horas }} horas</span>
+          <span>{{ tarea.horas }} Horas</span>
           <button (click)="eliminarTarea('backend', i)">
             <i class="fa fa-trash eliminar-button"></i>
           </button>
@@ -356,7 +412,7 @@
           class="flex justify-between p-2 border-b border-gray-300 items-center"
         >
           <span>{{ tarea.nombre }}</span>
-          <span>{{ tarea.horas }} horas</span>
+          <span>{{ tarea.horas }} Horas</span>
           <button (click)="eliminarTarea('frontend', i)">
             <i class="fa fa-trash eliminar-button"></i>
           </button>

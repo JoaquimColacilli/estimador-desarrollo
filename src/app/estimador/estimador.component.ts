@@ -207,26 +207,49 @@ export class EstimadorComponent implements OnInit {
       this.estimaciones = {};
     }
 
+    // Aquí se asignan las horas a las columnas de Back, Front y Total
     this.camposEstimacion.forEach((campo) => {
       if (campo.modo === 'porcentaje') {
-        this.estimaciones[campo.key] = Math.round(
+        this.estimaciones[campo.key + 'Back'] = Math.round(
           (this.totalBackendHoras * campo.porcentaje) / 100
         );
+        this.estimaciones[campo.key + 'Front'] = Math.round(
+          (this.totalFrontendHoras * campo.porcentaje) / 100
+        );
       } else {
-        this.estimaciones[campo.key] = campo.horas ?? 0;
+        this.estimaciones[campo.key + 'Back'] = campo.horas ?? 0;
+        this.estimaciones[campo.key + 'Front'] = campo.horas ?? 0;
+      }
+      this.estimaciones[campo.key + 'Total'] =
+        this.estimaciones[campo.key + 'Back'] +
+        this.estimaciones[campo.key + 'Front'];
+    });
+
+    const keys = [
+      'analisisFuncional',
+      'analisisTecnico',
+      'pruebasUnitarias',
+      'pruebasIntegracion',
+      'implementacionYSoporte',
+      'gestion',
+    ];
+
+    keys.forEach((key) => {
+      if (!this.estimaciones[key + 'Back']) {
+        this.estimaciones[key + 'Back'] = 0;
+      }
+      if (!this.estimaciones[key + 'Front']) {
+        this.estimaciones[key + 'Front'] = 0;
+      }
+      if (!this.estimaciones[key + 'Total']) {
+        this.estimaciones[key + 'Total'] = 0;
       }
     });
 
     this.estimaciones.desarrolloBackend = this.totalBackendHoras;
     this.estimaciones.desarrolloFront = this.totalFrontendHoras;
-
-    this.totalHoras =
-      this.totalBackendHoras +
-      this.totalFrontendHoras +
-      this.camposEstimacion.reduce(
-        (acc, campo) => acc + (this.estimaciones[campo.key] || 0),
-        0
-      );
+    this.estimaciones.desarrolloTotal =
+      this.totalBackendHoras + this.totalFrontendHoras;
   }
 
   updatePieChartData(): void {
@@ -236,14 +259,14 @@ export class EstimadorComponent implements OnInit {
         datasets: [
           {
             data: [
-              this.estimaciones.analisisFuncional,
-              this.estimaciones.analisisTecnico,
+              this.estimaciones.analisisFuncionalTotal,
+              this.estimaciones.analisisTecnicoTotal,
               this.estimaciones.desarrolloBackend,
               this.estimaciones.desarrolloFront,
-              this.estimaciones.pruebasUnitarias,
-              this.estimaciones.pruebasIntegracion,
-              this.estimaciones.implementacionYSoporte,
-              this.estimaciones.gestion,
+              this.estimaciones.pruebasUnitariasTotal,
+              this.estimaciones.pruebasIntegracionTotal,
+              this.estimaciones.implementacionYSoporteTotal,
+              this.estimaciones.gestionTotal,
             ],
           },
         ],
@@ -277,14 +300,20 @@ export class EstimadorComponent implements OnInit {
   agregarTarea(type: 'backend' | 'frontend'): void {
     if (!this.estimaciones) {
       this.estimaciones = {
-        analisisFuncional: 0,
-        analisisTecnico: 0,
+        analisisFuncionalBack: 0,
+        analisisTecnicoBack: 0,
         desarrolloBackend: 0,
         desarrolloFront: 0,
-        pruebasUnitarias: 0,
-        pruebasIntegracion: 0,
-        implementacionYSoporte: 0,
-        gestion: 0,
+        pruebasUnitariasBack: 0,
+        pruebasIntegracionBack: 0,
+        implementacionYSoporteBack: 0,
+        gestionBack: 0,
+        analisisFuncionalFront: 0,
+        analisisTecnicoFront: 0,
+        pruebasUnitariasFront: 0,
+        pruebasIntegracionFront: 0,
+        implementacionYSoporteFront: 0,
+        gestionFront: 0,
       };
     }
 
@@ -300,6 +329,7 @@ export class EstimadorComponent implements OnInit {
 
       this.calcularTotalHoras();
       this.updatePieChartData();
+      this.showEstimaciones = true;
     } else if (
       type === 'frontend' &&
       this.tareaNombreFrontend &&
@@ -315,6 +345,7 @@ export class EstimadorComponent implements OnInit {
 
       this.calcularTotalHoras();
       this.updatePieChartData();
+      this.showEstimaciones = true;
     }
   }
 
