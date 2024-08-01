@@ -1,513 +1,522 @@
-<div
-  class="min-h-screen flex flex-col justify-center items-center bg-gray-100 p-4"
-  id="content-to-export"
->
-  <div
-    class="flex flex-col md:flex-row items-start w-full max-w-7xl transition-all duration-500 h-full"
-  >
-    <div
-      class="bg-white shadow-md rounded-lg p-6 max-w-lg w-full transition-all duration-300 flex-grow"
-      [ngClass]="{
-        'md:w-1/2': showTareasCard || showFrontendTareasCard,
-        'mx-auto': !showTareasCard && !showFrontendTareasCard
-      }"
-    >
-      <div class="flex items-center justify-between mb-6">
-        <h1 class="text-3xl font-bold text-gray-800">
-          Estimador de Desarrollos
-        </h1>
-        <div class="flex items-center">
-          <input
-            type="checkbox"
-            id="frontendSwitch"
-            [(ngModel)]="showFrontend"
-            (change)="handleFrontendSwitch()"
-            class="hidden"
-          />
-          <label for="frontendSwitch" class="flex items-center cursor-pointer">
-            <div class="relative">
-              <div class="block bg-gray-300 w-10 h-6 rounded-full"></div>
-              <div
-                class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition"
-              ></div>
-            </div>
-          </label>
-          <i
-            class="fa-solid fa-info-circle ml-2"
-            title="Este switch activa las horas para desarrollo frontend."
-          ></i>
-        </div>
-      </div>
-      <div class="flex items-center mb-6">
-        <label
-          for="desarrollo"
-          class="block text-lg font-medium text-gray-700 mb-2"
-          >Backend</label
-        >
-        <input
-          type="number"
-          id="desarrollo"
-          [(ngModel)]="desarrolloHoras"
-          (input)="calcularEstimacion()"
-          class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ml-4"
-          placeholder="Ingrese las horas de desarrollo"
-          [disabled]="showTareasCard"
-        />
-        <button
-          (click)="toggleTareasCard()"
-          class="bg-gray-300 p-2 ml-4 rounded shadow flex items-center"
-        >
-          <i *ngIf="!showTareasCard" class="fa-solid fa-arrow-right"></i>
-          <i *ngIf="showTareasCard" class="fa-solid fa-arrow-left"></i>
-        </button>
-      </div>
-      <div *ngIf="showFrontend" class="flex items-center mb-6">
-        <label
-          for="frontend"
-          class="block text-lg font-medium text-gray-700 mb-2"
-          >Frontend</label
-        >
-        <input
-          type="number"
-          id="frontend"
-          [(ngModel)]="frontendHoras"
-          (input)="calcularEstimacion()"
-          class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ml-4"
-          placeholder="Ingrese las horas de desarrollo"
-          [disabled]="showFrontendTareasCard"
-        />
-        <button
-          (click)="toggleFrontendTareasCard()"
-          class="bg-gray-300 p-2 ml-4 rounded shadow flex items-center"
-        >
-          <i
-            *ngIf="!showFrontendTareasCard"
-            class="fa-solid fa-arrow-right"
-          ></i>
-          <i *ngIf="showFrontendTareasCard" class="fa-solid fa-arrow-left"></i>
-        </button>
-      </div>
-      <div
-        *ngIf="
-          showEstimaciones &&
-          (tareas.length > 0 ||
-            tareasFrontend.length > 0 ||
-            desarrolloHoras ||
-            frontendHoras)
-        "
-        class="bg-gray-50 p-4 rounded-lg overflow-hidden"
-      >
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-2xl font-semibold text-gray-700">Cálculo:</h2>
-          <i
-            class="fa-solid fa-cog cursor-pointer text-gray-700"
-            title="Configurar cálculos"
-            (click)="toggleConfiguracion()"
-          ></i>
-        </div>
-
-        <!-- Encabezado de columnas para H.Back, H.Front y Total -->
-        <div class="flex justify-between mb-2">
-          <span class="flex-grow text-left"></span>
-          <!-- Espacio para alinear los títulos -->
-          <span class="w-20 text-right font-bold">H.Back</span>
-          <span class="w-20 text-right font-bold">H.Front</span>
-          <span class="w-20 text-right font-bold">Total</span>
-        </div>
-
-        <!-- Filas con los títulos y valores calculados -->
-        <ul class="space-y-2 mb-4">
-          <li class="flex justify-between items-center">
-            <span class="flex-grow text-left">Análisis Funcional:</span>
-            <span class="w-20 text-right"
-              >{{ estimaciones?.analisisFuncionalBack }} Hs.</span
-            >
-            <span class="w-20 text-right"
-              >{{ estimaciones?.analisisFuncionalFront }} Hs.</span
-            >
-            <span class="w-20 text-right"
-              >{{ estimaciones?.analisisFuncionalTotal }} Hs.</span
-            >
-          </li>
-          <li class="flex justify-between items-center">
-            <span class="flex-grow text-left">Análisis Técnico:</span>
-            <span class="w-20 text-right"
-              >{{ estimaciones?.analisisTecnicoBack }} Hs.</span
-            >
-            <span class="w-20 text-right"
-              >{{ estimaciones?.analisisTecnicoFront }} Hs.</span
-            >
-            <span class="w-20 text-right"
-              >{{ estimaciones?.analisisTecnicoTotal }} Hs.</span
-            >
-          </li>
-          <li class="flex justify-between items-center">
-            <span class="flex-grow text-left">Pruebas Unitarias:</span>
-            <span class="w-20 text-right"
-              >{{ estimaciones?.pruebasUnitariasBack }} Hs.</span
-            >
-            <span class="w-20 text-right"
-              >{{ estimaciones?.pruebasUnitariasFront }} Hs.</span
-            >
-            <span class="w-20 text-right"
-              >{{ estimaciones?.pruebasUnitariasTotal }} Hs.</span
-            >
-          </li>
-          <li class="flex justify-between items-center">
-            <span class="flex-grow text-left">Pruebas de Integración:</span>
-            <span class="w-20 text-right"
-              >{{ estimaciones?.pruebasIntegracionBack }} Hs.</span
-            >
-            <span class="w-20 text-right"
-              >{{ estimaciones?.pruebasIntegracionFront }} Hs.</span
-            >
-            <span class="w-20 text-right"
-              >{{ estimaciones?.pruebasIntegracionTotal }} Hs.</span
-            >
-          </li>
-          <li class="flex justify-between items-center">
-            <span class="flex-grow text-left">Implementación y Soporte:</span>
-            <span class="w-20 text-right"
-              >{{ estimaciones?.implementacionYSoporteBack }} Hs.</span
-            >
-            <span class="w-20 text-right"
-              >{{ estimaciones?.implementacionYSoporteFront }} Hs.</span
-            >
-            <span class="w-20 text-right"
-              >{{ estimaciones?.implementacionYSoporteTotal }} Hs.</span
-            >
-          </li>
-          <li class="flex justify-between items-center">
-            <span class="flex-grow text-left">Gestión:</span>
-            <span class="w-20 text-right"
-              >{{ estimaciones?.gestionBack }} Hs.</span
-            >
-            <span class="w-20 text-right"
-              >{{ estimaciones?.gestionFront }} Hs.</span
-            >
-            <span class="w-20 text-right"
-              >{{ estimaciones?.gestionTotal }} Hs.</span
-            >
-          </li>
-          <li class="flex justify-between items-center">
-            <span class="flex-grow text-left">Desarrollo:</span>
-            <span class="w-20 text-right"
-              >{{ estimaciones?.desarrolloBackend }} Hs.</span
-            >
-            <span class="w-20 text-right"
-              >{{ estimaciones?.desarrolloFront }} Hs.</span
-            >
-            <span class="w-20 text-right"
-              >{{ estimaciones?.desarrolloTotal }} Hs.</span
-            >
-          </li>
-        </ul>
-
-        <hr class="my-4" />
-        <div class="flex justify-between font-bold text-lg">
-          <span>Total:</span>
-          <span>{{ totalHoras }} Horas</span>
-        </div>
-        <div class="canva-style mt-6">
-          <canvas
-            baseChart
-            [data]="pieChartData"
-            [labels]="pieChartLabels"
-            [type]="pieChartType"
-          ></canvas>
-        </div>
-      </div>
-    </div>
-
-    <div
-      *ngIf="showConfiguracion"
-      class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
-    >
-      <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-        <div class="flex justify-between items-center mb-4">
-          <div class="tabs">
-            <button
-              [ngClass]="{ 'active-tab': activeTab === 'backend' }"
-              (click)="activeTab = 'backend'"
-              class="tab-button"
-            >
-              Configuración Backend
-            </button>
-            <button
-              [ngClass]="{ 'active-tab': activeTab === 'frontend' }"
-              (click)="activeTab = 'frontend'"
-              class="tab-button"
-            >
-              Configuración Frontend
-            </button>
-          </div>
-          <button class="text-gray-700" (click)="toggleConfiguracion()">
-            <i class="fa-solid fa-times"></i>
-          </button>
-        </div>
-
-        <ul class="space-y-4">
-          <ng-container
-            *ngIf="activeTab === 'backend'; else frontendConfiguracion"
-          >
-            <ng-container *ngFor="let campo of camposEstimacionBackend">
-              <li class="flex flex-col">
-                <div class="flex justify-between items-center mb-2">
-                  <span>{{ campo.label }}:</span>
-                  <div class="flex items-center ml-4">
-                    <label class="mr-2">%</label>
-                    <input
-                      type="radio"
-                      name="{{ campo.key }}"
-                      value="porcentaje"
-                      [(ngModel)]="campo.modo"
-                      class="mr-4"
-                      (change)="updateEstimaciones()"
-                    />
-                    <label class="mr-2">Horas</label>
-                    <input
-                      type="radio"
-                      name="{{ campo.key }}"
-                      value="horas"
-                      [(ngModel)]="campo.modo"
-                      (change)="updateEstimaciones()"
-                    />
-                  </div>
-                </div>
-                <div class="flex justify-between items-center">
-                  <div class="flex items-center">
-                    <input
-                      type="number"
-                      class="w-20 p-1 border border-gray-300 rounded-md"
-                      [(ngModel)]="campo.porcentaje"
-                      *ngIf="campo.modo === 'porcentaje'"
-                      (input)="updateEstimaciones()"
-                      [max]="100"
-                      min="0"
-                    />
-                    <span *ngIf="campo.modo === 'porcentaje'" class="ml-1"
-                      >%</span
-                    >
-                    <input
-                      type="number"
-                      class="w-20 p-1 border border-gray-300 rounded-md"
-                      [(ngModel)]="campo.horas"
-                      *ngIf="campo.modo === 'horas'"
-                      (input)="updateEstimaciones()"
-                      min="0"
-                    />
-                  </div>
-                </div>
-              </li>
-            </ng-container>
-          </ng-container>
-
-          <ng-template #frontendConfiguracion>
-            <ng-container *ngFor="let campo of camposEstimacionFrontend">
-              <li class="flex flex-col">
-                <div class="flex justify-between items-center mb-2">
-                  <span>{{ campo.label }}:</span>
-                  <div class="flex items-center ml-4">
-                    <label class="mr-2">%</label>
-                    <input
-                      type="radio"
-                      name="{{ campo.key }}-front"
-                      value="porcentaje"
-                      [(ngModel)]="campo.modo"
-                      class="mr-4"
-                      (change)="updateEstimaciones()"
-                    />
-                    <label class="mr-2">Horas</label>
-                    <input
-                      type="radio"
-                      name="{{ campo.key }}-front"
-                      value="horas"
-                      [(ngModel)]="campo.modo"
-                      (change)="updateEstimaciones()"
-                    />
-                  </div>
-                </div>
-                <div class="flex justify-between items-center">
-                  <div class="flex items-center">
-                    <input
-                      type="number"
-                      class="w-20 p-1 border border-gray-300 rounded-md"
-                      [(ngModel)]="campo.porcentaje"
-                      *ngIf="campo.modo === 'porcentaje'"
-                      (input)="updateEstimaciones()"
-                      [max]="100"
-                      min="0"
-                    />
-                    <span *ngIf="campo.modo === 'porcentaje'" class="ml-1"
-                      >%</span
-                    >
-                    <input
-                      type="number"
-                      class="w-20 p-1 border border-gray-300 rounded-md"
-                      [(ngModel)]="campo.horas"
-                      *ngIf="campo.modo === 'horas'"
-                      (input)="updateEstimaciones()"
-                      min="0"
-                    />
-                  </div>
-                </div>
-              </li>
-            </ng-container>
-          </ng-template>
-        </ul>
-
-        <div class="flex justify-between mt-4">
-          <button
-            class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
-            (click)="restablecerValores()"
-          >
-            "" Restablecer valores
-          </button>
-          <button
-            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            (click)="guardarConfiguracion()"
-            [disabled]="!isValidConfiguration()"
-            [ngClass]="{
-              'bg-gray-400 cursor-not-allowed': !isValidConfiguration(),
-              'bg-blue-500 hover:bg-blue-700 cursor-pointer':
-                isValidConfiguration()
-            }"
-          >
-            Guardar
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div
-      *ngIf="showTareasCard"
-      class="bg-white shadow-md rounded-lg p-6 w-full md:w-1/2 ml-6 transition-all h-full flex flex-col"
-    >
-      <h2 class="text-2xl font-semibold mb-2 text-gray-700">
-        Agregar Tareas Backend
-      </h2>
-      <div class="mb-2 flex items-center">
-        <div class="w-3/4 mr-4">
-          <label
-            for="tareaNombre"
-            class="block text-lg font-medium text-gray-700"
-            >Nombre de la Tarea</label
-          >
-          <input
-            type="text"
-            id="tareaNombre"
-            [(ngModel)]="tareaNombre"
-            class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            placeholder="Ingrese el nombre de la tarea"
-          />
-        </div>
-        <div class="w-1/4">
-          <label
-            for="tareaHoras"
-            class="block text-lg font-medium text-gray-700"
-            >Horas</label
-          >
-          <input
-            type="number"
-            id="tareaHoras"
-            [(ngModel)]="tareaHoras"
-            class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            placeholder="Horas"
-          />
-        </div>
-      </div>
-      <button
-        (click)="agregarTarea('backend')"
-        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-      >
-        Agregar
-      </button>
-      <ul class="flex-grow overflow-y-auto">
-        <li
-          *ngFor="let tarea of tareas; let i = index"
-          class="flex justify-between p-2 border-b border-gray-300 items-center"
-        >
-          <span>{{ tarea.nombre }}</span>
-          <span>{{ tarea.horas }} Horas</span>
-          <div class="flex items-center">
-            <button (click)="editarTarea('backend', i)">
-              <i class="fa fa-edit mr-2"></i>
-            </button>
-            <button (click)="eliminarTarea('backend', i)">
-              <i class="fa fa-trash eliminar-button"></i>
-            </button>
-          </div>
-        </li>
-      </ul>
-    </div>
-
-    <div
-      *ngIf="showFrontendTareasCard"
-      class="bg-white shadow-md rounded-lg p-6 w-full md:w-1/2 ml-6 transition-all h-full flex flex-col"
-    >
-      <h2 class="text-2xl font-semibold mb-2 text-gray-700">
-        Agregar Tareas Frontend
-      </h2>
-      <div class="mb-2 flex items-center">
-        <div class="w-3/4 mr-4">
-          <label
-            for="tareaNombreFrontend"
-            class="block text-lg font-medium text-gray-700"
-            >Nombre de la Tarea</label
-          >
-          <input
-            type="text"
-            id="tareaNombreFrontend"
-            [(ngModel)]="tareaNombreFrontend"
-            class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            placeholder="Ingrese el nombre de la tarea"
-          />
-        </div>
-        <div class="w-1/4">
-          <label
-            for="tareaHorasFrontend"
-            class="block text-lg font-medium text-gray-700"
-            >Horas</label
-          >
-          <input
-            type="number"
-            id="tareaHorasFrontend"
-            [(ngModel)]="tareaHorasFrontend"
-            class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            placeholder="Horas"
-          />
-        </div>
-      </div>
-      <button
-        (click)="agregarTarea('frontend')"
-        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-      >
-        Agregar
-      </button>
-      <ul class="flex-grow overflow-y-auto">
-        <li
-          *ngFor="let tarea of tareasFrontend; let i = index"
-          class="flex justify-between p-2 border-b border-gray-300 items-center"
-        >
-          <span>{{ tarea.nombre }}</span>
-          <span>{{ tarea.horas }} Horas</span>
-          <div class="flex items-center">
-            <button (click)="editarTarea('frontend', i)">
-              <i class="fa fa-edit mr-2"></i>
-            </button>
-            <button (click)="eliminarTarea('frontend', i)">
-              <i class="fa fa-trash eliminar-button"></i>
-            </button>
-          </div>
-        </li>
-      </ul>
-    </div>
-  </div>
+<div class="relative w-full">
   <button
     (click)="downloadPDF()"
-    style="position: absolute; top: 10px; right: 10px"
-    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded absolute top-0 right-0 mt-4 mr-4"
   >
     Descargar PDF
   </button>
+
+  <div
+    class="min-h-screen flex flex-col justify-center items-center bg-gray-100 p-4"
+    id="content-to-export"
+  >
+    <div
+      class="flex flex-col md:flex-row items-start w-full max-w-7xl transition-all duration-500 h-full"
+    >
+      <div
+        class="bg-white shadow-md rounded-lg p-6 max-w-lg w-full transition-all duration-300 flex-grow"
+        [ngClass]="{
+          'md:w-1/2': showTareasCard || showFrontendTareasCard,
+          'mx-auto': !showTareasCard && !showFrontendTareasCard
+        }"
+      >
+        <div class="flex items-center justify-between mb-6">
+          <h1 class="text-3xl font-bold text-gray-800">
+            Estimador de Desarrollos
+          </h1>
+
+          <div class="flex items-center">
+            <input
+              type="checkbox"
+              id="frontendSwitch"
+              [(ngModel)]="showFrontend"
+              (change)="handleFrontendSwitch()"
+              class="hidden"
+            />
+            <label
+              for="frontendSwitch"
+              class="flex items-center cursor-pointer"
+            >
+              <div class="relative">
+                <div class="block bg-gray-300 w-10 h-6 rounded-full"></div>
+                <div
+                  class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition"
+                ></div>
+              </div>
+            </label>
+            <i
+              class="fa-solid fa-info-circle ml-2"
+              title="Este switch activa las horas para desarrollo frontend."
+            ></i>
+          </div>
+        </div>
+        <div class="flex items-center mb-6">
+          <label
+            for="desarrollo"
+            class="block text-lg font-medium text-gray-700 mb-2"
+            >Backend</label
+          >
+          <input
+            type="number"
+            id="desarrollo"
+            [(ngModel)]="desarrolloHoras"
+            (input)="calcularEstimacion()"
+            class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ml-4"
+            placeholder="Ingrese las horas de desarrollo"
+            [disabled]="showTareasCard"
+          />
+          <button
+            (click)="toggleTareasCard()"
+            class="bg-gray-300 p-2 ml-4 rounded shadow flex items-center"
+          >
+            <i *ngIf="!showTareasCard" class="fa-solid fa-arrow-right"></i>
+            <i *ngIf="showTareasCard" class="fa-solid fa-arrow-left"></i>
+          </button>
+        </div>
+        <div *ngIf="showFrontend" class="flex items-center mb-6">
+          <label
+            for="frontend"
+            class="block text-lg font-medium text-gray-700 mb-2"
+            >Frontend</label
+          >
+          <input
+            type="number"
+            id="frontend"
+            [(ngModel)]="frontendHoras"
+            (input)="calcularEstimacion()"
+            class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ml-4"
+            placeholder="Ingrese las horas de desarrollo"
+            [disabled]="showFrontendTareasCard"
+          />
+          <button
+            (click)="toggleFrontendTareasCard()"
+            class="bg-gray-300 p-2 ml-4 rounded shadow flex items-center"
+          >
+            <i
+              *ngIf="!showFrontendTareasCard"
+              class="fa-solid fa-arrow-right"
+            ></i>
+            <i
+              *ngIf="showFrontendTareasCard"
+              class="fa-solid fa-arrow-left"
+            ></i>
+          </button>
+        </div>
+        <div
+          *ngIf="
+            showEstimaciones &&
+            (tareas.length > 0 ||
+              tareasFrontend.length > 0 ||
+              desarrolloHoras ||
+              frontendHoras)
+          "
+          class="bg-gray-50 p-4 rounded-lg overflow-hidden"
+        >
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-semibold text-gray-700">Cálculo:</h2>
+            <i
+              class="fa-solid fa-cog cursor-pointer text-gray-700"
+              title="Configurar cálculos"
+              (click)="toggleConfiguracion()"
+            ></i>
+          </div>
+
+          <!-- Encabezado de columnas para H.Back, H.Front y Total -->
+          <div class="flex justify-between mb-2">
+            <span class="flex-grow text-left"></span>
+            <!-- Espacio para alinear los títulos -->
+            <span class="w-20 text-right font-bold">H.Back</span>
+            <span class="w-20 text-right font-bold">H.Front</span>
+            <span class="w-20 text-right font-bold">Total</span>
+          </div>
+
+          <!-- Filas con los títulos y valores calculados -->
+          <ul class="space-y-2 mb-4">
+            <li class="flex justify-between items-center">
+              <span class="flex-grow text-left">Análisis Funcional:</span>
+              <span class="w-20 text-right"
+                >{{ estimaciones?.analisisFuncionalBack }} Hs.</span
+              >
+              <span class="w-20 text-right"
+                >{{ estimaciones?.analisisFuncionalFront }} Hs.</span
+              >
+              <span class="w-20 text-right"
+                >{{ estimaciones?.analisisFuncionalTotal }} Hs.</span
+              >
+            </li>
+            <li class="flex justify-between items-center">
+              <span class="flex-grow text-left">Análisis Técnico:</span>
+              <span class="w-20 text-right"
+                >{{ estimaciones?.analisisTecnicoBack }} Hs.</span
+              >
+              <span class="w-20 text-right"
+                >{{ estimaciones?.analisisTecnicoFront }} Hs.</span
+              >
+              <span class="w-20 text-right"
+                >{{ estimaciones?.analisisTecnicoTotal }} Hs.</span
+              >
+            </li>
+            <li class="flex justify-between items-center">
+              <span class="flex-grow text-left">Pruebas Unitarias:</span>
+              <span class="w-20 text-right"
+                >{{ estimaciones?.pruebasUnitariasBack }} Hs.</span
+              >
+              <span class="w-20 text-right"
+                >{{ estimaciones?.pruebasUnitariasFront }} Hs.</span
+              >
+              <span class="w-20 text-right"
+                >{{ estimaciones?.pruebasUnitariasTotal }} Hs.</span
+              >
+            </li>
+            <li class="flex justify-between items-center">
+              <span class="flex-grow text-left">Pruebas de Integración:</span>
+              <span class="w-20 text-right"
+                >{{ estimaciones?.pruebasIntegracionBack }} Hs.</span
+              >
+              <span class="w-20 text-right"
+                >{{ estimaciones?.pruebasIntegracionFront }} Hs.</span
+              >
+              <span class="w-20 text-right"
+                >{{ estimaciones?.pruebasIntegracionTotal }} Hs.</span
+              >
+            </li>
+            <li class="flex justify-between items-center">
+              <span class="flex-grow text-left">Implementación y Soporte:</span>
+              <span class="w-20 text-right"
+                >{{ estimaciones?.implementacionYSoporteBack }} Hs.</span
+              >
+              <span class="w-20 text-right"
+                >{{ estimaciones?.implementacionYSoporteFront }} Hs.</span
+              >
+              <span class="w-20 text-right"
+                >{{ estimaciones?.implementacionYSoporteTotal }} Hs.</span
+              >
+            </li>
+            <li class="flex justify-between items-center">
+              <span class="flex-grow text-left">Gestión:</span>
+              <span class="w-20 text-right"
+                >{{ estimaciones?.gestionBack }} Hs.</span
+              >
+              <span class="w-20 text-right"
+                >{{ estimaciones?.gestionFront }} Hs.</span
+              >
+              <span class="w-20 text-right"
+                >{{ estimaciones?.gestionTotal }} Hs.</span
+              >
+            </li>
+            <li class="flex justify-between items-center">
+              <span class="flex-grow text-left">Desarrollo:</span>
+              <span class="w-20 text-right"
+                >{{ estimaciones?.desarrolloBackend }} Hs.</span
+              >
+              <span class="w-20 text-right"
+                >{{ estimaciones?.desarrolloFront }} Hs.</span
+              >
+              <span class="w-20 text-right"
+                >{{ estimaciones?.desarrolloTotal }} Hs.</span
+              >
+            </li>
+          </ul>
+
+          <hr class="my-4" />
+          <div class="flex justify-between font-bold text-lg">
+            <span>Total:</span>
+            <span>{{ totalHoras }} Horas</span>
+          </div>
+          <div class="canva-style mt-6">
+            <canvas
+              baseChart
+              [data]="pieChartData"
+              [labels]="pieChartLabels"
+              [type]="pieChartType"
+            ></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div
+        *ngIf="showConfiguracion"
+        class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
+      >
+        <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+          <div class="flex justify-between items-center mb-4">
+            <div class="tabs">
+              <button
+                [ngClass]="{ 'active-tab': activeTab === 'backend' }"
+                (click)="activeTab = 'backend'"
+                class="tab-button"
+              >
+                Configuración Backend
+              </button>
+              <button
+                [ngClass]="{ 'active-tab': activeTab === 'frontend' }"
+                (click)="activeTab = 'frontend'"
+                class="tab-button"
+              >
+                Configuración Frontend
+              </button>
+            </div>
+            <button class="text-gray-700" (click)="toggleConfiguracion()">
+              <i class="fa-solid fa-times"></i>
+            </button>
+          </div>
+
+          <ul class="space-y-4">
+            <ng-container
+              *ngIf="activeTab === 'backend'; else frontendConfiguracion"
+            >
+              <ng-container *ngFor="let campo of camposEstimacionBackend">
+                <li class="flex flex-col">
+                  <div class="flex justify-between items-center mb-2">
+                    <span>{{ campo.label }}:</span>
+                    <div class="flex items-center ml-4">
+                      <label class="mr-2">%</label>
+                      <input
+                        type="radio"
+                        name="{{ campo.key }}"
+                        value="porcentaje"
+                        [(ngModel)]="campo.modo"
+                        class="mr-4"
+                        (change)="updateEstimaciones()"
+                      />
+                      <label class="mr-2">Horas</label>
+                      <input
+                        type="radio"
+                        name="{{ campo.key }}"
+                        value="horas"
+                        [(ngModel)]="campo.modo"
+                        (change)="updateEstimaciones()"
+                      />
+                    </div>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <div class="flex items-center">
+                      <input
+                        type="number"
+                        class="w-20 p-1 border border-gray-300 rounded-md"
+                        [(ngModel)]="campo.porcentaje"
+                        *ngIf="campo.modo === 'porcentaje'"
+                        (input)="updateEstimaciones()"
+                        [max]="100"
+                        min="0"
+                      />
+                      <span *ngIf="campo.modo === 'porcentaje'" class="ml-1"
+                        >%</span
+                      >
+                      <input
+                        type="number"
+                        class="w-20 p-1 border border-gray-300 rounded-md"
+                        [(ngModel)]="campo.horas"
+                        *ngIf="campo.modo === 'horas'"
+                        (input)="updateEstimaciones()"
+                        min="0"
+                      />
+                    </div>
+                  </div>
+                </li>
+              </ng-container>
+            </ng-container>
+
+            <ng-template #frontendConfiguracion>
+              <ng-container *ngFor="let campo of camposEstimacionFrontend">
+                <li class="flex flex-col">
+                  <div class="flex justify-between items-center mb-2">
+                    <span>{{ campo.label }}:</span>
+                    <div class="flex items-center ml-4">
+                      <label class="mr-2">%</label>
+                      <input
+                        type="radio"
+                        name="{{ campo.key }}-front"
+                        value="porcentaje"
+                        [(ngModel)]="campo.modo"
+                        class="mr-4"
+                        (change)="updateEstimaciones()"
+                      />
+                      <label class="mr-2">Horas</label>
+                      <input
+                        type="radio"
+                        name="{{ campo.key }}-front"
+                        value="horas"
+                        [(ngModel)]="campo.modo"
+                        (change)="updateEstimaciones()"
+                      />
+                    </div>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <div class="flex items-center">
+                      <input
+                        type="number"
+                        class="w-20 p-1 border border-gray-300 rounded-md"
+                        [(ngModel)]="campo.porcentaje"
+                        *ngIf="campo.modo === 'porcentaje'"
+                        (input)="updateEstimaciones()"
+                        [max]="100"
+                        min="0"
+                      />
+                      <span *ngIf="campo.modo === 'porcentaje'" class="ml-1"
+                        >%</span
+                      >
+                      <input
+                        type="number"
+                        class="w-20 p-1 border border-gray-300 rounded-md"
+                        [(ngModel)]="campo.horas"
+                        *ngIf="campo.modo === 'horas'"
+                        (input)="updateEstimaciones()"
+                        min="0"
+                      />
+                    </div>
+                  </div>
+                </li>
+              </ng-container>
+            </ng-template>
+          </ul>
+
+          <div class="flex justify-between mt-4">
+            <button
+              class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+              (click)="restablecerValores()"
+            >
+              Restablecer valores
+            </button>
+            <button
+              class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              (click)="guardarConfiguracion()"
+              [disabled]="!isValidConfiguration()"
+              [ngClass]="{
+                'bg-gray-400 cursor-not-allowed': !isValidConfiguration(),
+                'bg-blue-500 hover:bg-blue-700 cursor-pointer':
+                  isValidConfiguration()
+              }"
+            >
+              Guardar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div
+        *ngIf="showTareasCard"
+        class="bg-white shadow-md rounded-lg p-6 w-full md:w-1/2 ml-6 transition-all h-full flex flex-col"
+      >
+        <h2 class="text-2xl font-semibold mb-2 text-gray-700">
+          Agregar Tareas Backend
+        </h2>
+        <div class="mb-2 flex items-center">
+          <div class="w-3/4 mr-4">
+            <label
+              for="tareaNombre"
+              class="block text-lg font-medium text-gray-700"
+              >Nombre de la Tarea</label
+            >
+            <input
+              type="text"
+              id="tareaNombre"
+              [(ngModel)]="tareaNombre"
+              class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder="Ingrese el nombre de la tarea"
+            />
+          </div>
+          <div class="w-1/4">
+            <label
+              for="tareaHoras"
+              class="block text-lg font-medium text-gray-700"
+              >Horas</label
+            >
+            <input
+              type="number"
+              id="tareaHoras"
+              [(ngModel)]="tareaHoras"
+              class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder="Horas"
+            />
+          </div>
+        </div>
+        <button
+          (click)="agregarTarea('backend')"
+          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        >
+          Agregar
+        </button>
+        <ul class="flex-grow overflow-y-auto">
+          <li
+            *ngFor="let tarea of tareas; let i = index"
+            class="flex justify-between p-2 border-b border-gray-300 items-center"
+          >
+            <span>{{ tarea.nombre }}</span>
+            <span>{{ tarea.horas }} Horas</span>
+            <div class="flex items-center">
+              <button (click)="editarTarea('backend', i)">
+                <i class="fa fa-edit mr-2"></i>
+              </button>
+              <button (click)="eliminarTarea('backend', i)">
+                <i class="fa fa-trash eliminar-button"></i>
+              </button>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div
+        *ngIf="showFrontendTareasCard"
+        class="bg-white shadow-md rounded-lg p-6 w-full md:w-1/2 ml-6 transition-all h-full flex flex-col"
+      >
+        <h2 class="text-2xl font-semibold mb-2 text-gray-700">
+          Agregar Tareas Frontend
+        </h2>
+        <div class="mb-2 flex items-center">
+          <div class="w-3/4 mr-4">
+            <label
+              for="tareaNombreFrontend"
+              class="block text-lg font-medium text-gray-700"
+              >Nombre de la Tarea</label
+            >
+            <input
+              type="text"
+              id="tareaNombreFrontend"
+              [(ngModel)]="tareaNombreFrontend"
+              class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder="Ingrese el nombre de la tarea"
+            />
+          </div>
+          <div class="w-1/4">
+            <label
+              for="tareaHorasFrontend"
+              class="block text-lg font-medium text-gray-700"
+              >Horas</label
+            >
+            <input
+              type="number"
+              id="tareaHorasFrontend"
+              [(ngModel)]="tareaHorasFrontend"
+              class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder="Horas"
+            />
+          </div>
+        </div>
+        <button
+          (click)="agregarTarea('frontend')"
+          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        >
+          Agregar
+        </button>
+        <ul class="flex-grow overflow-y-auto">
+          <li
+            *ngFor="let tarea of tareasFrontend; let i = index"
+            class="flex justify-between p-2 border-b border-gray-300 items-center"
+          >
+            <span>{{ tarea.nombre }}</span>
+            <span>{{ tarea.horas }} Horas</span>
+            <div class="flex items-center">
+              <button (click)="editarTarea('frontend', i)">
+                <i class="fa fa-edit mr-2"></i>
+              </button>
+              <button (click)="eliminarTarea('frontend', i)">
+                <i class="fa fa-trash eliminar-button"></i>
+              </button>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
 </div>
