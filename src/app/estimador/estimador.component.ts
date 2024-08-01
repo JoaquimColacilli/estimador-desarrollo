@@ -6,6 +6,8 @@ import { NgChartsModule } from 'ng2-charts';
 import { ChartData, ChartType } from 'chart.js';
 import { CommonModule } from '@angular/common';
 
+let html2pdf: any;
+
 interface CampoEstimacion {
   key: string;
   label: string;
@@ -177,7 +179,6 @@ export class EstimadorComponent implements OnInit {
   isBrowser: boolean;
   showConfiguracion: boolean = false;
 
-  // Dos arrays separados para Backend y Frontend
   camposEstimacionBackend: CampoEstimacion[] = [...DEFAULT_VALORES_BACKEND];
   camposEstimacionFrontend: CampoEstimacion[] = [...DEFAULT_VALORES_FRONTEND];
 
@@ -204,6 +205,41 @@ export class EstimadorComponent implements OnInit {
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
     this.isBrowser = isPlatformBrowser(this.platformId);
+
+    if (this.isBrowser) {
+      import('html2pdf.js').then((module) => {
+        html2pdf = module.default;
+      });
+    }
+  }
+
+  downloadPDF(): void {
+    if (this.isBrowser && html2pdf) {
+      const element = document.getElementById('content-to-export');
+      const options = {
+        margin: 0,
+        filename: 'estimador-desarrollos.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+      };
+      if (element) {
+        html2pdf()
+          .from(element)
+          .set(options)
+          .save()
+          .then(() => {
+            console.log('PDF generado y descargado exitosamente.');
+          })
+          .catch((error: any) => {
+            console.error('Error al generar el PDF:', error);
+          });
+      } else {
+        console.error('El elemento a exportar no se encontró.');
+      }
+    } else {
+      console.error('html2pdf no está disponible o no estás en un navegador.');
+    }
   }
 
   ngOnInit(): void {}

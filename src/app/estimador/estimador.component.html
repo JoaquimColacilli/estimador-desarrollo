@@ -1,5 +1,6 @@
 <div
   class="min-h-screen flex flex-col justify-center items-center bg-gray-100 p-4"
+  id="content-to-export"
 >
   <div
     class="flex flex-col md:flex-row items-start w-full max-w-7xl transition-all duration-500 h-full"
@@ -88,7 +89,11 @@
       </div>
       <div
         *ngIf="
-          showEstimaciones && (tareas.length > 0 || tareasFrontend.length > 0)
+          showEstimaciones &&
+          (tareas.length > 0 ||
+            tareasFrontend.length > 0 ||
+            desarrolloHoras ||
+            frontendHoras)
         "
         class="bg-gray-50 p-4 rounded-lg overflow-hidden"
       >
@@ -498,4 +503,11 @@
       </ul>
     </div>
   </div>
+  <button
+    (click)="downloadPDF()"
+    style="position: absolute; top: 10px; right: 10px"
+    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+  >
+    Descargar PDF
+  </button>
 </div>
