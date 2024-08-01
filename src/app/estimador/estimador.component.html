@@ -218,77 +218,143 @@
     >
       <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
         <div class="flex justify-between items-center mb-4">
-          <h3 class="text-xl font-semibold text-gray-700">
-            Configurar Cálculos
-          </h3>
+          <div class="tabs">
+            <button
+              [ngClass]="{ 'active-tab': activeTab === 'backend' }"
+              (click)="activeTab = 'backend'"
+              class="tab-button"
+            >
+              Configuración Backend
+            </button>
+            <button
+              [ngClass]="{ 'active-tab': activeTab === 'frontend' }"
+              (click)="activeTab = 'frontend'"
+              class="tab-button"
+            >
+              Configuración Frontend
+            </button>
+          </div>
           <button class="text-gray-700" (click)="toggleConfiguracion()">
             <i class="fa-solid fa-times"></i>
           </button>
         </div>
+
         <ul class="space-y-4">
-          <ng-container *ngFor="let campo of camposEstimacion">
-            <li
-              *ngIf="
-                campo.key !== 'desarrolloBackend' &&
-                campo.key !== 'desarrolloFront'
-              "
-              class="flex flex-col"
-            >
-              <div class="flex justify-between items-center mb-2">
-                <span>{{ campo.label }}:</span>
-                <div class="flex items-center ml-4">
-                  <label class="mr-2">%</label>
-                  <input
-                    type="radio"
-                    name="{{ campo.key }}"
-                    value="porcentaje"
-                    [(ngModel)]="campo.modo"
-                    class="mr-4"
-                    (change)="updateEstimaciones()"
-                  />
-                  <label class="mr-2">Horas</label>
-                  <input
-                    type="radio"
-                    name="{{ campo.key }}"
-                    value="horas"
-                    [(ngModel)]="campo.modo"
-                    (change)="updateEstimaciones()"
-                  />
+          <ng-container
+            *ngIf="activeTab === 'backend'; else frontendConfiguracion"
+          >
+            <ng-container *ngFor="let campo of camposEstimacionBackend">
+              <li class="flex flex-col">
+                <div class="flex justify-between items-center mb-2">
+                  <span>{{ campo.label }}:</span>
+                  <div class="flex items-center ml-4">
+                    <label class="mr-2">%</label>
+                    <input
+                      type="radio"
+                      name="{{ campo.key }}"
+                      value="porcentaje"
+                      [(ngModel)]="campo.modo"
+                      class="mr-4"
+                      (change)="updateEstimaciones()"
+                    />
+                    <label class="mr-2">Horas</label>
+                    <input
+                      type="radio"
+                      name="{{ campo.key }}"
+                      value="horas"
+                      [(ngModel)]="campo.modo"
+                      (change)="updateEstimaciones()"
+                    />
+                  </div>
                 </div>
-              </div>
-              <div class="flex justify-between items-center">
-                <div class="flex items-center">
-                  <input
-                    type="number"
-                    class="w-20 p-1 border border-gray-300 rounded-md"
-                    [(ngModel)]="campo.porcentaje"
-                    *ngIf="campo.modo === 'porcentaje'"
-                    (input)="updateEstimaciones()"
-                    [max]="100"
-                    min="0"
-                  />
-                  <span *ngIf="campo.modo === 'porcentaje'" class="ml-1"
-                    >%</span
-                  >
-                  <input
-                    type="number"
-                    class="w-20 p-1 border border-gray-300 rounded-md"
-                    [(ngModel)]="campo.horas"
-                    *ngIf="campo.modo === 'horas'"
-                    (input)="updateEstimaciones()"
-                    min="0"
-                  />
+                <div class="flex justify-between items-center">
+                  <div class="flex items-center">
+                    <input
+                      type="number"
+                      class="w-20 p-1 border border-gray-300 rounded-md"
+                      [(ngModel)]="campo.porcentaje"
+                      *ngIf="campo.modo === 'porcentaje'"
+                      (input)="updateEstimaciones()"
+                      [max]="100"
+                      min="0"
+                    />
+                    <span *ngIf="campo.modo === 'porcentaje'" class="ml-1"
+                      >%</span
+                    >
+                    <input
+                      type="number"
+                      class="w-20 p-1 border border-gray-300 rounded-md"
+                      [(ngModel)]="campo.horas"
+                      *ngIf="campo.modo === 'horas'"
+                      (input)="updateEstimaciones()"
+                      min="0"
+                    />
+                  </div>
                 </div>
-              </div>
-            </li>
+              </li>
+            </ng-container>
           </ng-container>
+
+          <ng-template #frontendConfiguracion>
+            <ng-container *ngFor="let campo of camposEstimacionFrontend">
+              <li class="flex flex-col">
+                <div class="flex justify-between items-center mb-2">
+                  <span>{{ campo.label }}:</span>
+                  <div class="flex items-center ml-4">
+                    <label class="mr-2">%</label>
+                    <input
+                      type="radio"
+                      name="{{ campo.key }}-front"
+                      value="porcentaje"
+                      [(ngModel)]="campo.modo"
+                      class="mr-4"
+                      (change)="updateEstimaciones()"
+                    />
+                    <label class="mr-2">Horas</label>
+                    <input
+                      type="radio"
+                      name="{{ campo.key }}-front"
+                      value="horas"
+                      [(ngModel)]="campo.modo"
+                      (change)="updateEstimaciones()"
+                    />
+                  </div>
+                </div>
+                <div class="flex justify-between items-center">
+                  <div class="flex items-center">
+                    <input
+                      type="number"
+                      class="w-20 p-1 border border-gray-300 rounded-md"
+                      [(ngModel)]="campo.porcentaje"
+                      *ngIf="campo.modo === 'porcentaje'"
+                      (input)="updateEstimaciones()"
+                      [max]="100"
+                      min="0"
+                    />
+                    <span *ngIf="campo.modo === 'porcentaje'" class="ml-1"
+                      >%</span
+                    >
+                    <input
+                      type="number"
+                      class="w-20 p-1 border border-gray-300 rounded-md"
+                      [(ngModel)]="campo.horas"
+                      *ngIf="campo.modo === 'horas'"
+                      (input)="updateEstimaciones()"
+                      min="0"
+                    />
+                  </div>
+                </div>
+              </li>
+            </ng-container>
+          </ng-template>
         </ul>
+
         <div class="flex justify-between mt-4">
           <button
             class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
-            (click)="reestablecerValores()"
+            (click)="restablecerValores()"
           >
-            Reestablecer valores
+            Restablecer valores
           </button>
           <button
             class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"

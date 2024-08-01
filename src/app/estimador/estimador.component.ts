@@ -13,7 +13,98 @@ interface CampoEstimacion {
   horas: number | null;
   modo: 'porcentaje' | 'horas';
 }
+
 const DEFAULT_VALORES: CampoEstimacion[] = [
+  {
+    key: 'analisisFuncional',
+    label: 'Análisis Funcional',
+    porcentaje: 10,
+    horas: null,
+    modo: 'porcentaje',
+  },
+  {
+    key: 'analisisTecnico',
+    label: 'Análisis Técnico',
+    porcentaje: 10,
+    horas: null,
+    modo: 'porcentaje',
+  },
+  {
+    key: 'pruebasUnitarias',
+    label: 'Pruebas Unitarias',
+    porcentaje: 10,
+    horas: null,
+    modo: 'porcentaje',
+  },
+  {
+    key: 'pruebasIntegracion',
+    label: 'Pruebas de Integración',
+    porcentaje: 10,
+    horas: null,
+    modo: 'porcentaje',
+  },
+  {
+    key: 'implementacionYSoporte',
+    label: 'Implementación y Soporte',
+    porcentaje: 15,
+    horas: null,
+    modo: 'porcentaje',
+  },
+  {
+    key: 'gestion',
+    label: 'Gestión',
+    porcentaje: 15,
+    horas: null,
+    modo: 'porcentaje',
+  },
+];
+
+const DEFAULT_VALORES_BACKEND: CampoEstimacion[] = [
+  {
+    key: 'analisisFuncional',
+    label: 'Análisis Funcional',
+    porcentaje: 10,
+    horas: null,
+    modo: 'porcentaje',
+  },
+  {
+    key: 'analisisTecnico',
+    label: 'Análisis Técnico',
+    porcentaje: 10,
+    horas: null,
+    modo: 'porcentaje',
+  },
+  {
+    key: 'pruebasUnitarias',
+    label: 'Pruebas Unitarias',
+    porcentaje: 10,
+    horas: null,
+    modo: 'porcentaje',
+  },
+  {
+    key: 'pruebasIntegracion',
+    label: 'Pruebas de Integración',
+    porcentaje: 10,
+    horas: null,
+    modo: 'porcentaje',
+  },
+  {
+    key: 'implementacionYSoporte',
+    label: 'Implementación y Soporte',
+    porcentaje: 15,
+    horas: null,
+    modo: 'porcentaje',
+  },
+  {
+    key: 'gestion',
+    label: 'Gestión',
+    porcentaje: 15,
+    horas: null,
+    modo: 'porcentaje',
+  },
+];
+
+const DEFAULT_VALORES_FRONTEND: CampoEstimacion[] = [
   {
     key: 'analisisFuncional',
     label: 'Análisis Funcional',
@@ -86,7 +177,11 @@ export class EstimadorComponent implements OnInit {
   isBrowser: boolean;
   showConfiguracion: boolean = false;
 
-  camposEstimacion: CampoEstimacion[] = [...DEFAULT_VALORES];
+  // Dos arrays separados para Backend y Frontend
+  camposEstimacionBackend: CampoEstimacion[] = [...DEFAULT_VALORES_BACKEND];
+  camposEstimacionFrontend: CampoEstimacion[] = [...DEFAULT_VALORES_FRONTEND];
+
+  activeTab: 'backend' | 'frontend' = 'backend';
 
   public pieChartLabels: string[] = [
     'Análisis Funcional',
@@ -125,6 +220,10 @@ export class EstimadorComponent implements OnInit {
     this.showConfiguracion = !this.showConfiguracion;
   }
 
+  switchTab(tab: 'backend' | 'frontend'): void {
+    this.activeTab = tab;
+  }
+
   guardarConfiguracion(): void {
     this.calcularEstimacion();
     this.toggleConfiguracion();
@@ -134,13 +233,25 @@ export class EstimadorComponent implements OnInit {
     this.calcularEstimacion();
   }
 
-  reestablecerValores(): void {
-    this.camposEstimacion = JSON.parse(JSON.stringify(DEFAULT_VALORES));
+  restablecerValores(): void {
+    if (this.activeTab === 'backend') {
+      this.camposEstimacionBackend = JSON.parse(
+        JSON.stringify(DEFAULT_VALORES)
+      );
+    } else if (this.activeTab === 'frontend') {
+      this.camposEstimacionFrontend = JSON.parse(
+        JSON.stringify(DEFAULT_VALORES)
+      );
+    }
     this.updateEstimaciones();
   }
 
   isValidConfiguration(): boolean {
-    return this.camposEstimacion.every((campo) => {
+    const camposEstimacion =
+      this.activeTab === 'backend'
+        ? this.camposEstimacionBackend
+        : this.camposEstimacionFrontend;
+    return camposEstimacion.every((campo) => {
       if (campo.modo === 'porcentaje') {
         return (
           campo.porcentaje !== null &&
@@ -197,42 +308,39 @@ export class EstimadorComponent implements OnInit {
       this.estimaciones = {};
     }
 
-    this.camposEstimacion.forEach((campo) => {
+    // Reiniciar las estimaciones antes de calcular
+    this.estimaciones = {
+      analisisFuncionalTotal: 0,
+      analisisTecnicoTotal: 0,
+      pruebasUnitariasTotal: 0,
+      pruebasIntegracionTotal: 0,
+      implementacionYSoporteTotal: 0,
+      gestionTotal: 0,
+    };
+
+    // Iterar sobre los campos de Backend y Frontend de forma independiente
+    this.camposEstimacionBackend.forEach((campo) => {
       if (campo.modo === 'porcentaje') {
         this.estimaciones[campo.key + 'Back'] = Math.round(
           (this.totalBackendHoras * campo.porcentaje) / 100
         );
+      } else {
+        this.estimaciones[campo.key + 'Back'] = campo.horas ?? 0;
+      }
+      this.estimaciones[campo.key + 'Total'] +=
+        this.estimaciones[campo.key + 'Back'];
+    });
+
+    this.camposEstimacionFrontend.forEach((campo) => {
+      if (campo.modo === 'porcentaje') {
         this.estimaciones[campo.key + 'Front'] = Math.round(
           (this.totalFrontendHoras * campo.porcentaje) / 100
         );
       } else {
-        this.estimaciones[campo.key + 'Back'] = campo.horas ?? 0;
         this.estimaciones[campo.key + 'Front'] = campo.horas ?? 0;
       }
-      this.estimaciones[campo.key + 'Total'] =
-        this.estimaciones[campo.key + 'Back'] +
+      this.estimaciones[campo.key + 'Total'] +=
         this.estimaciones[campo.key + 'Front'];
-    });
-
-    const keys = [
-      'analisisFuncional',
-      'analisisTecnico',
-      'pruebasUnitarias',
-      'pruebasIntegracion',
-      'implementacionYSoporte',
-      'gestion',
-    ];
-
-    keys.forEach((key) => {
-      if (!this.estimaciones[key + 'Back']) {
-        this.estimaciones[key + 'Back'] = 0;
-      }
-      if (!this.estimaciones[key + 'Front']) {
-        this.estimaciones[key + 'Front'] = 0;
-      }
-      if (!this.estimaciones[key + 'Total']) {
-        this.estimaciones[key + 'Total'] = 0;
-      }
     });
 
     this.estimaciones.desarrolloBackend = this.totalBackendHoras;
@@ -325,7 +433,6 @@ export class EstimadorComponent implements OnInit {
         gestionFront: 0,
       };
     }
-
     if (
       type === 'backend' &&
       this.tareaNombre &&

@@ -101,7 +101,7 @@ input:checked + label .block {
 }
 
 .bg-gray-400 {
-  background-color: #cbd5e0; /* Tailwind gray-400 color */
+  background-color: #cbd5e0; 
 }
 
 .cursor-not-allowed {
@@ -110,4 +110,23 @@ input:checked + label .block {
 
 .cursor-pointer {
   cursor: pointer;
+}
+
+.tabs {
+  display: flex;
+}
+
+.tab-button {
+  padding: 10px 20px;
+  cursor: pointer;
+  border: none;
+  background-color: #f3f4f6;
+  margin-right: 4px;
+  border-radius: 4px 4px 0 0;
+}
+
+.active-tab {
+  background-color: #e5e7eb;
+  font-weight: bold;
+  border-bottom: 2px solid #3b82f6;
 }
