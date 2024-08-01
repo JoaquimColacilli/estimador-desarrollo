@@ -154,34 +154,26 @@ export class EstimadorComponent implements OnInit {
   }
 
   calcularEstimacion(): void {
-    const totalBackendHoras =
+    this.totalBackendHoras =
       (this.desarrolloHoras || 0) +
       (this.showTareasCard
         ? this.tareas.reduce((acc, tarea) => acc + tarea.horas, 0)
         : 0);
-    const frontendHoras = this.frontendHoras || 0;
 
-    if (
-      totalBackendHoras > 0 ||
-      frontendHoras > 0 ||
-      this.tareas.length > 0 ||
-      this.tareasFrontend.length > 0
-    ) {
+    this.totalFrontendHoras =
+      (this.frontendHoras || 0) +
+      (this.showFrontendTareasCard
+        ? this.tareasFrontend.reduce((acc, tarea) => acc + tarea.horas, 0)
+        : 0);
+
+    this.totalHoras = this.totalBackendHoras + this.totalFrontendHoras;
+
+    if (this.totalHoras > 0) {
       this.calcularTotalHoras();
-      if (this.isBrowser) {
-        this.updatePieChartData();
-      }
+      this.updatePieChartData();
       this.showEstimaciones = true;
     } else {
-      this.animatingOut = true;
-      setTimeout(() => {
-        this.animatingOut = false;
-        this.estimaciones = null;
-        this.showEstimaciones = false;
-        this.totalHoras = 0;
-        this.totalBackendHoras = 0;
-        this.totalFrontendHoras = 0;
-      }, 500); // Duración de la animación
+      this.showEstimaciones = false;
     }
   }
 
@@ -207,7 +199,6 @@ export class EstimadorComponent implements OnInit {
       this.estimaciones = {};
     }
 
-    // Aquí se asignan las horas a las columnas de Back, Front y Total
     this.camposEstimacion.forEach((campo) => {
       if (campo.modo === 'porcentaje') {
         this.estimaciones[campo.key + 'Back'] = Math.round(
@@ -276,6 +267,21 @@ export class EstimadorComponent implements OnInit {
         labels: this.pieChartLabels,
         datasets: [{ data: [] }],
       };
+    }
+  }
+
+  editarTarea(type: 'backend' | 'frontend', index: number): void {
+    let tarea;
+    if (type === 'backend') {
+      tarea = this.tareas[index];
+      this.tareaNombre = tarea.nombre;
+      this.tareaHoras = tarea.horas;
+      this.eliminarTarea('backend', index); // Elimina la tarea antigua para reemplazarla con la editada
+    } else if (type === 'frontend') {
+      tarea = this.tareasFrontend[index];
+      this.tareaNombreFrontend = tarea.nombre;
+      this.tareaHorasFrontend = tarea.horas;
+      this.eliminarTarea('frontend', index); // Elimina la tarea antigua para reemplazarla con la editada
     }
   }
 

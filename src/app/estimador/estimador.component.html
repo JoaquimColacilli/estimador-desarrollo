@@ -356,9 +356,14 @@
         >
           <span>{{ tarea.nombre }}</span>
           <span>{{ tarea.horas }} Horas</span>
-          <button (click)="eliminarTarea('backend', i)">
-            <i class="fa fa-trash eliminar-button"></i>
-          </button>
+          <div class="flex items-center">
+            <button (click)="editarTarea('backend', i)">
+              <i class="fa fa-edit mr-2"></i>
+            </button>
+            <button (click)="eliminarTarea('backend', i)">
+              <i class="fa fa-trash eliminar-button"></i>
+            </button>
+          </div>
         </li>
       </ul>
     </div>
@@ -413,9 +418,14 @@
         >
           <span>{{ tarea.nombre }}</span>
           <span>{{ tarea.horas }} Horas</span>
-          <button (click)="eliminarTarea('frontend', i)">
-            <i class="fa fa-trash eliminar-button"></i>
-          </button>
+          <div class="flex items-center">
+            <button (click)="editarTarea('frontend', i)">
+              <i class="fa fa-edit mr-2"></i>
+            </button>
+            <button (click)="eliminarTarea('frontend', i)">
+              <i class="fa fa-trash eliminar-button"></i>
+            </button>
+          </div>
         </li>
       </ul>
     </div>
