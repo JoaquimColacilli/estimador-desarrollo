@@ -87,7 +87,9 @@
         </button>
       </div>
       <div
-        *ngIf="showEstimaciones"
+        *ngIf="
+          showEstimaciones && (tareas.length > 0 || tareasFrontend.length > 0)
+        "
         class="bg-gray-50 p-4 rounded-lg overflow-hidden"
       >
         <div class="flex justify-between items-center mb-4">
@@ -354,7 +356,7 @@
             class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
             (click)="restablecerValores()"
           >
-            Restablecer valores
+            "" Restablecer valores
           </button>
           <button
             class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
