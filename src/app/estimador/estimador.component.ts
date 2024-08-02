@@ -11,55 +11,10 @@ let html2pdf: any;
 interface CampoEstimacion {
   key: string;
   label: string;
-  porcentaje: number;
+  porcentaje: number | null | undefined; // Permite número, null o undefined
   horas: number | null;
   modo: 'porcentaje' | 'horas';
 }
-
-const DEFAULT_VALORES: CampoEstimacion[] = [
-  {
-    key: 'analisisFuncional',
-    label: 'Análisis Funcional',
-    porcentaje: 10,
-    horas: null,
-    modo: 'porcentaje',
-  },
-  {
-    key: 'analisisTecnico',
-    label: 'Análisis Técnico',
-    porcentaje: 10,
-    horas: null,
-    modo: 'porcentaje',
-  },
-  {
-    key: 'pruebasUnitarias',
-    label: 'Pruebas Unitarias',
-    porcentaje: 10,
-    horas: null,
-    modo: 'porcentaje',
-  },
-  {
-    key: 'pruebasIntegracion',
-    label: 'Pruebas de Integración',
-    porcentaje: 10,
-    horas: null,
-    modo: 'porcentaje',
-  },
-  {
-    key: 'implementacionYSoporte',
-    label: 'Implementación y Soporte',
-    porcentaje: 15,
-    horas: null,
-    modo: 'porcentaje',
-  },
-  {
-    key: 'gestion',
-    label: 'Gestión',
-    porcentaje: 15,
-    horas: null,
-    modo: 'porcentaje',
-  },
-];
 
 const DEFAULT_VALORES_BACKEND: CampoEstimacion[] = [
   {
@@ -103,6 +58,13 @@ const DEFAULT_VALORES_BACKEND: CampoEstimacion[] = [
     porcentaje: 15,
     horas: null,
     modo: 'porcentaje',
+  },
+  {
+    key: 'documentacion',
+    label: 'Documentación',
+    porcentaje: undefined,
+    horas: 8,
+    modo: 'horas',
   },
 ];
 
@@ -149,6 +111,13 @@ const DEFAULT_VALORES_FRONTEND: CampoEstimacion[] = [
     horas: null,
     modo: 'porcentaje',
   },
+  {
+    key: 'documentacion',
+    label: 'Documentación',
+    porcentaje: undefined,
+    horas: 8,
+    modo: 'horas',
+  },
 ];
 
 @Component({
@@ -193,6 +162,7 @@ export class EstimadorComponent implements OnInit {
     'Pruebas de Integración',
     'Implementación y Soporte',
     'Gestión',
+    'Documentación', // Nuevo campo Documentación
   ];
   public pieChartData: ChartData<'pie'> = {
     labels: this.pieChartLabels,
@@ -272,11 +242,11 @@ export class EstimadorComponent implements OnInit {
   restablecerValores(): void {
     if (this.activeTab === 'backend') {
       this.camposEstimacionBackend = JSON.parse(
-        JSON.stringify(DEFAULT_VALORES)
+        JSON.stringify(DEFAULT_VALORES_BACKEND)
       );
     } else if (this.activeTab === 'frontend') {
       this.camposEstimacionFrontend = JSON.parse(
-        JSON.stringify(DEFAULT_VALORES)
+        JSON.stringify(DEFAULT_VALORES_FRONTEND)
       );
     }
     this.updateEstimaciones();
@@ -288,14 +258,17 @@ export class EstimadorComponent implements OnInit {
         ? this.camposEstimacionBackend
         : this.camposEstimacionFrontend;
     return camposEstimacion.every((campo) => {
-      if (campo.modo === 'porcentaje') {
+      if (campo.modo === 'porcentaje' && campo.porcentaje !== undefined) {
         return (
           campo.porcentaje !== null &&
           campo.porcentaje >= 0 &&
           campo.porcentaje <= 100
         );
-      } else {
+      } else if (campo.modo === 'horas') {
         return campo.horas !== null && campo.horas >= 0;
+      } else {
+        // Para el caso en que campo.porcentaje sea undefined
+        return true;
       }
     });
   }
@@ -352,11 +325,17 @@ export class EstimadorComponent implements OnInit {
       pruebasIntegracionTotal: 0,
       implementacionYSoporteTotal: 0,
       gestionTotal: 0,
+      documentacionTotal: 0, // Inicializar documentación
     };
 
-    // Iterar sobre los campos de Backend y Frontend de forma independiente
     this.camposEstimacionBackend.forEach((campo) => {
-      if (campo.modo === 'porcentaje') {
+      if (campo.key === 'documentacion' && this.totalBackendHoras === 0) {
+        this.estimaciones[campo.key + 'Back'] = 0;
+      } else if (
+        campo.modo === 'porcentaje' &&
+        campo.porcentaje !== undefined &&
+        campo.porcentaje !== null
+      ) {
         this.estimaciones[campo.key + 'Back'] = Math.round(
           (this.totalBackendHoras * campo.porcentaje) / 100
         );
@@ -368,7 +347,13 @@ export class EstimadorComponent implements OnInit {
     });
 
     this.camposEstimacionFrontend.forEach((campo) => {
-      if (campo.modo === 'porcentaje') {
+      if (campo.key === 'documentacion' && this.totalFrontendHoras === 0) {
+        this.estimaciones[campo.key + 'Front'] = 0;
+      } else if (
+        campo.modo === 'porcentaje' &&
+        campo.porcentaje !== undefined &&
+        campo.porcentaje !== null
+      ) {
         this.estimaciones[campo.key + 'Front'] = Math.round(
           (this.totalFrontendHoras * campo.porcentaje) / 100
         );
@@ -405,6 +390,7 @@ export class EstimadorComponent implements OnInit {
               this.estimaciones.pruebasIntegracionTotal,
               this.estimaciones.implementacionYSoporteTotal,
               this.estimaciones.gestionTotal,
+              this.estimaciones.documentacionTotal, // Nuevo campo Documentación
             ],
           },
         ],
@@ -467,6 +453,8 @@ export class EstimadorComponent implements OnInit {
         pruebasIntegracionFront: 0,
         implementacionYSoporteFront: 0,
         gestionFront: 0,
+        documentacionBack: 8, // Default de Documentación Backend
+        documentacionFront: 8, // Default de Documentación Frontend
       };
     }
     if (

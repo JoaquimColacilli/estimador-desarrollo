@@ -205,6 +205,18 @@
               >
             </li>
             <li class="flex justify-between items-center">
+              <span class="flex-grow text-left">Documentación:</span>
+              <span class="w-20 text-right"
+                >{{ estimaciones?.documentacionBack }} Hs.</span
+              >
+              <span class="w-20 text-right"
+                >{{ estimaciones?.documentacionFront }} Hs.</span
+              >
+              <span class="w-20 text-right"
+                >{{ estimaciones?.documentacionTotal }} Hs.</span
+              >
+            </li>
+            <li class="flex justify-between items-center">
               <span class="flex-grow text-left">Desarrollo:</span>
               <span class="w-20 text-right"
                 >{{ estimaciones?.desarrolloBackend }} Hs.</span
@@ -326,7 +338,7 @@
                       <label class="mr-2">%</label>
                       <input
                         type="radio"
-                        name="{{ campo.key }}-front"
+                        name="{{ campo.key }}"
                         value="porcentaje"
                         [(ngModel)]="campo.modo"
                         class="mr-4"
@@ -335,7 +347,7 @@
                       <label class="mr-2">Horas</label>
                       <input
                         type="radio"
-                        name="{{ campo.key }}-front"
+                        name="{{ campo.key }}"
                         value="horas"
                         [(ngModel)]="campo.modo"
                         (change)="updateEstimaciones()"
