@@ -5,6 +5,7 @@ import { EstimadorService } from '../service/estimador.service';
 import { NgChartsModule } from 'ng2-charts';
 import { ChartData, ChartType } from 'chart.js';
 import { CommonModule } from '@angular/common';
+import { jsPDF } from 'jspdf';
 
 let html2pdf: any;
 
@@ -141,6 +142,8 @@ export class EstimadorComponent implements OnInit {
   showFrontend: boolean = false;
   tareaNombre: string = '';
   tareaHoras: number | null = null;
+  totalCalculoBackend: number = 0;
+  totalCalculoFrontend: number = 0;
   tareas: { nombre: string; horas: number }[] = [];
   tareaNombreFrontend: string = '';
   tareaHorasFrontend: number | null = null;
@@ -186,22 +189,49 @@ export class EstimadorComponent implements OnInit {
   downloadPDF(): void {
     if (this.isBrowser && html2pdf) {
       const element = document.getElementById('content-to-export');
+      const pdfContent = document.getElementById('pdf-content');
+
+      if (pdfContent) {
+        pdfContent.style.display = 'block'; // Mostrar el div oculto para el PDF
+      }
+
       const options = {
-        margin: 0,
+        margin: [0.5, 0.5, 0.5, 0.5], // Márgenes en pulgadas (superior, izquierda, inferior, derecha)
         filename: 'estimador-desarrollos.pdf',
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
+        html2canvas: { scale: 2, useCORS: true },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }, // Evitar quiebres de página en todos los elementos
       };
-      if (element) {
+
+      if (pdfContent) {
         html2pdf()
-          .from(element)
+          .from(pdfContent)
           .set(options)
+          .toPdf()
+          .get('pdf')
+          .then((pdf: any) => {
+            const totalPages = pdf.internal.pages.length - 1; // Obtener el número total de páginas
+            for (let i = 1; i <= totalPages; i++) {
+              pdf.setPage(i);
+              pdf.text(
+                `Página ${i} de ${totalPages}`,
+                options.margin[1], // Usa el margen izquierdo
+                pdf.internal.pageSize.getHeight() - options.margin[2] // Usa el margen inferior
+              );
+            }
+          })
           .save()
           .then(() => {
+            if (pdfContent) {
+              pdfContent.style.display = 'none';
+            }
             console.log('PDF generado y descargado exitosamente.');
           })
           .catch((error: any) => {
+            if (pdfContent) {
+              pdfContent.style.display = 'none';
+            }
             console.error('Error al generar el PDF:', error);
           });
       } else {
@@ -313,6 +343,10 @@ export class EstimadorComponent implements OnInit {
       ? desarrolloFrontHoras + totalTareasFrontendHoras
       : 0;
 
+    // Inicializar las propiedades para los totales de cálculo
+    this.totalCalculoBackend = 0;
+    this.totalCalculoFrontend = 0;
+
     if (!this.estimaciones) {
       this.estimaciones = {};
     }
@@ -344,6 +378,7 @@ export class EstimadorComponent implements OnInit {
       }
       this.estimaciones[campo.key + 'Total'] +=
         this.estimaciones[campo.key + 'Back'];
+      this.totalCalculoBackend += this.estimaciones[campo.key + 'Back']; // Sumar horas de cálculo Backend
     });
 
     this.camposEstimacionFrontend.forEach((campo) => {
@@ -362,6 +397,7 @@ export class EstimadorComponent implements OnInit {
       }
       this.estimaciones[campo.key + 'Total'] +=
         this.estimaciones[campo.key + 'Front'];
+      this.totalCalculoFrontend += this.estimaciones[campo.key + 'Front']; // Sumar horas de cálculo Frontend
     });
 
     this.estimaciones.desarrolloBackend = this.totalBackendHoras;
@@ -370,9 +406,11 @@ export class EstimadorComponent implements OnInit {
       this.totalBackendHoras + this.totalFrontendHoras;
 
     // Sumar todas las horas para calcular el total general
-    this.totalHoras = Object.keys(this.estimaciones)
-      .filter((key) => key.endsWith('Total'))
-      .reduce((acc, key) => acc + (this.estimaciones[key] || 0), 0);
+    this.totalHoras =
+      this.totalBackendHoras +
+      this.totalFrontendHoras +
+      this.totalCalculoBackend +
+      this.totalCalculoFrontend;
   }
 
   updatePieChartData(): void {
