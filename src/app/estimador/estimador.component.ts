@@ -150,11 +150,24 @@ export class EstimadorComponent implements OnInit {
   tareasFrontend: { nombre: string; horas: number }[] = [];
   isBrowser: boolean;
   showConfiguracion: boolean = false;
-
+  formSubmitted = false;
+  formData = {
+    tituloDocumento: '',
+    proyecto: '',
+    desarrolladores: [''],
+    descripcion: '',
+  };
+  originalFormData = {
+    tituloDocumento: '',
+    proyecto: '',
+    desarrolladores: [''],
+    descripcion: '',
+  };
   camposEstimacionBackend: CampoEstimacion[] = [...DEFAULT_VALORES_BACKEND];
   camposEstimacionFrontend: CampoEstimacion[] = [...DEFAULT_VALORES_FRONTEND];
-
   activeTab: 'backend' | 'frontend' = 'backend';
+  showWarningModal = false;
+  isFormModalOpen = false;
 
   public pieChartLabels: string[] = [
     'Análisis Funcional',
@@ -184,6 +197,27 @@ export class EstimadorComponent implements OnInit {
         html2pdf = module.default;
       });
     }
+  }
+
+  validateAndDownloadPDF() {
+    const { tituloDocumento, proyecto, desarrolladores } = this.formData;
+    if (
+      !tituloDocumento ||
+      !proyecto ||
+      !desarrolladores[0] ||
+      (!this.desarrolloHoras &&
+        !this.frontendHoras &&
+        this.tareas.length === 0 &&
+        this.tareasFrontend.length === 0)
+    ) {
+      this.showWarningModal = true;
+    } else {
+      this.downloadPDF();
+    }
+  }
+
+  closeWarningModal() {
+    this.showWarningModal = false;
   }
 
   downloadPDF(): void {
@@ -535,5 +569,43 @@ export class EstimadorComponent implements OnInit {
     }
     this.calcularTotalHoras();
     this.updatePieChartData();
+  }
+
+  trackByIndex(index: number, obj: any): any {
+    return index;
+  }
+
+  addDeveloper() {
+    this.formData.desarrolladores.push('');
+  }
+
+  removeDeveloper(index: number) {
+    this.formData.desarrolladores.splice(index, 1);
+  }
+
+  openFormModal() {
+    this.originalFormData = JSON.parse(JSON.stringify(this.formData));
+    this.isFormModalOpen = true;
+  }
+
+  closeFormModal() {
+    this.isFormModalOpen = false;
+    this.formData = JSON.parse(JSON.stringify(this.originalFormData));
+    this.formSubmitted = false;
+  }
+
+  submitForm() {
+    this.formSubmitted = true;
+
+    const isValid =
+      this.formData.tituloDocumento &&
+      this.formData.proyecto &&
+      this.formData.desarrolladores.every((dev) => dev);
+
+    if (isValid) {
+      this.originalFormData = JSON.parse(JSON.stringify(this.formData));
+      console.log('Formulario enviado:', this.formData);
+      this.closeFormModal();
+    }
   }
 }

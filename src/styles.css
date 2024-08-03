@@ -140,3 +140,11 @@ input:checked + label .block {
   page-break-inside: avoid;
   break-inside: avoid;
 }
+
+.word-break {
+  word-break: break-word; 
+}
+
+.w-400px {
+  width: 400px;
+}

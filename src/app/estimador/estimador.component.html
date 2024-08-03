@@ -1,10 +1,223 @@
 <div class="relative w-full">
-  <button
-    (click)="downloadPDF()"
-    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded absolute top-0 right-0 mt-4 mr-4"
+  <div class="absolute top-0 right-0 mt-4 mr-4 flex space-x-4">
+    <button
+      (click)="openFormModal()"
+      class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+    >
+      Rellenar Formulario
+    </button>
+    <button
+      (click)="validateAndDownloadPDF()"
+      class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+    >
+      Descargar PDF
+    </button>
+  </div>
+
+  <div
+    *ngIf="showWarningModal"
+    class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
+    style="z-index: 999999999999"
   >
-    Descargar PDF
-  </button>
+    <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+      <div class="flex items-center mb-4">
+        <div class="bg-red-500 rounded-full pr-2 pt-1 pb-1 pl-2">
+          <i class="fa-solid fa-exclamation-triangle text-white text-2xl"></i>
+        </div>
+        <h2 class="text-xl font-bold text-gray-800 ml-4">Advertencia</h2>
+      </div>
+      <p
+        class="text-gray-700 mb-6"
+        *ngIf="
+          !formData.tituloDocumento ||
+          !formData.proyecto ||
+          !formData.desarrolladores[0]
+        "
+      >
+        <i class="fa-solid fa-circle text-red-500 mr-2 fa-xs"></i>
+        Debe rellenar el formulario para poder descargar el PDF.
+      </p>
+      <p
+        class="text-gray-700 mb-6"
+        *ngIf="
+          !desarrolloHoras &&
+          !frontendHoras &&
+          tareas.length === 0 &&
+          tareasFrontend.length === 0
+        "
+      >
+        <i class="fa-solid fa-circle text-red-500 mr-2 fa-xs"></i>
+        Debe ingresar horas de desarrollo para poder descargar el PDF.
+      </p>
+      <div class="flex justify-end">
+        <button
+          (click)="closeWarningModal()"
+          class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-full"
+        >
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div
+    *ngIf="isFormModalOpen"
+    class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center"
+    style="z-index: 999999999999"
+  >
+    <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold text-gray-800">Rellenar Formulario</h2>
+        <button
+          (click)="closeFormModal()"
+          class="text-gray-600 hover:text-gray-800"
+        >
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </div>
+
+      <form (ngSubmit)="submitForm()">
+        <!-- Título Documento -->
+        <div class="mb-4">
+          <label
+            for="tituloDocumento"
+            class="block text-sm font-medium text-gray-700"
+          >
+            Título Documento *
+          </label>
+          <input
+            type="text"
+            id="tituloDocumento"
+            [(ngModel)]="formData.tituloDocumento"
+            name="tituloDocumento"
+            [ngClass]="{
+              'border-red-500': !formData.tituloDocumento && formSubmitted
+            }"
+            class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+            required
+          />
+          <div
+            *ngIf="!formData.tituloDocumento && formSubmitted"
+            class="text-red-500 text-sm mt-1"
+          >
+            El campo "Título Documento" es de carácter obligatorio.
+          </div>
+        </div>
+
+        <!-- Proyecto -->
+        <div class="mb-4">
+          <label for="proyecto" class="block text-sm font-medium text-gray-700">
+            Proyecto *
+          </label>
+          <input
+            type="text"
+            id="proyecto"
+            [(ngModel)]="formData.proyecto"
+            name="proyecto"
+            [ngClass]="{
+              'border-red-500': !formData.proyecto && formSubmitted
+            }"
+            class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+            required
+          />
+          <div
+            *ngIf="!formData.proyecto && formSubmitted"
+            class="text-red-500 text-sm mt-1"
+          >
+            El campo "Proyecto" es de carácter obligatorio.
+          </div>
+        </div>
+
+        <!-- Nombre Desarrollador -->
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700"
+            >Nombre Desarrollador *</label
+          >
+          <div class="space-y-2">
+            <div
+              *ngFor="
+                let developer of formData.desarrolladores;
+                let i = index;
+                trackBy: trackByIndex
+              "
+              class="flex flex-col"
+            >
+              <div class="flex items-center">
+                <input
+                  type="text"
+                  [(ngModel)]="formData.desarrolladores[i]"
+                  name="desarrollador{{ i }}"
+                  [ngClass]="{
+                    'border-red-500':
+                      !formData.desarrolladores[i] && formSubmitted
+                  }"
+                  class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                  required
+                />
+                <button
+                  *ngIf="i === 0"
+                  type="button"
+                  (click)="addDeveloper()"
+                  class="ml-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded"
+                >
+                  <i class="fa-solid fa-plus"></i>
+                </button>
+                <button
+                  *ngIf="i > 0"
+                  type="button"
+                  (click)="removeDeveloper(i)"
+                  class="ml-2 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-3 rounded"
+                >
+                  <i class="fa-solid fa-times"></i>
+                </button>
+              </div>
+              <div
+                *ngIf="!developer && formSubmitted"
+                class="text-red-500 text-sm mt-1"
+              >
+                El campo "Nombre Desarrollador" es de carácter obligatorio.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Descripción -->
+        <div class="mb-4">
+          <label
+            for="descripcion"
+            class="block text-sm font-medium text-gray-700"
+          >
+            Descripción
+          </label>
+          <textarea
+            id="descripcion"
+            [(ngModel)]="formData.descripcion"
+            name="descripcion"
+            rows="3"
+            class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+            placeholder="Descripción opcional"
+          ></textarea>
+        </div>
+
+        <!-- Botones de acción -->
+        <div class="flex justify-end space-x-4">
+          <button
+            type="button"
+            (click)="closeFormModal()"
+            class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          >
+            Guardar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <div
     class="min-h-screen flex flex-col justify-center items-center bg-gray-100 p-4"
@@ -452,8 +665,16 @@
             *ngFor="let tarea of tareas; let i = index"
             class="flex justify-between p-2 border-b border-gray-300 items-center"
           >
-            <span>{{ tarea.nombre }}</span>
-            <span>{{ tarea.horas }} Horas</span>
+            <div class="w-3/4 mr-4">
+              <span
+                class="block break-words whitespace-normal"
+                style="overflow-y: auto; max-height: 128px"
+                >{{ tarea.nombre }}</span
+              >
+            </div>
+            <div class="w-1/4 text-center">
+              <span>{{ tarea.horas }} Hs.</span>
+            </div>
             <div class="flex items-center">
               <button (click)="editarTarea('backend', i)">
                 <i class="fa fa-edit mr-2"></i>
@@ -514,8 +735,16 @@
             *ngFor="let tarea of tareasFrontend; let i = index"
             class="flex justify-between p-2 border-b border-gray-300 items-center"
           >
-            <span>{{ tarea.nombre }}</span>
-            <span>{{ tarea.horas }} Horas</span>
+            <div class="w-3/4 mr-4">
+              <span
+                class="block break-words whitespace-normal"
+                style="overflow-y: auto; max-height: 128px"
+                >{{ tarea.nombre }}</span
+              >
+            </div>
+            <div class="w-1/4 text-center">
+              <span>{{ tarea.horas }} Hs.</span>
+            </div>
             <div class="flex items-center">
               <button (click)="editarTarea('frontend', i)">
                 <i class="fa fa-edit mr-2"></i>
@@ -580,7 +809,13 @@
         </tr>
         <ng-container *ngIf="tareas.length > 0; else noTareasBackend">
           <tr *ngFor="let tarea of tareas">
-            <td class="px-4 py-2 border">{{ tarea.nombre }}</td>
+            <td class="px-4 py-2 border">
+              <div class="w-3/4 mr-4">
+                <span class="block break-words whitespace-normal">
+                  {{ tarea.nombre }}
+                </span>
+              </div>
+            </td>
             <td class="px-4 py-2 border text-right">{{ tarea.horas }} Hs.</td>
           </tr>
         </ng-container>
@@ -602,7 +837,6 @@
     </table>
   </ng-container>
 
-  <!-- Tabla Frontend (mostrar solo si hay horas de Frontend) -->
   <ng-container *ngIf="totalFrontendHoras > 0">
     <table class="table-auto w-full mb-6">
       <thead>
@@ -641,7 +875,13 @@
         </tr>
         <ng-container *ngIf="tareasFrontend.length > 0; else noTareasFrontend">
           <tr *ngFor="let tarea of tareasFrontend">
-            <td class="px-4 py-2 border">{{ tarea.nombre }}</td>
+            <td class="px-4 py-2 border">
+              <div class="w-3/4 mr-4">
+                <span class="block break-words whitespace-normal">
+                  {{ tarea.nombre }}
+                </span>
+              </div>
+            </td>
             <td class="px-4 py-2 border text-right">{{ tarea.horas }} Hs.</td>
           </tr>
         </ng-container>
