@@ -614,39 +614,71 @@ export class EstimadorComponent implements OnInit {
     }
   }
 
-  toggleMicroservicesModalBackend() {
-    if (this.showMicroservicesModalBackend) {
-      this.openMicroservicesModalBackend();
-    } else {
-      this.closeMicroservicesModalBackend();
+  openMicroservicesModal(type: 'backend' | 'frontend') {
+    if (type === 'backend') {
+      this.microservicesBackend = ['', ''];
+      this.showMicroservicesModalBackend = true;
+    } else if (type === 'frontend') {
+      this.microservicesFrontend = ['', ''];
+      this.showMicroservicesModalFrontend = true;
     }
   }
 
-  openMicroservicesModalBackend() {
-    this.microservicesBackend = ['', ''];
-  }
-
-  closeMicroservicesModalBackend() {}
-
-  toggleMicroservicesModalFrontend() {
-    if (this.showMicroservicesModalFrontend) {
-      this.openMicroservicesModalFrontend();
-    } else {
-      this.closeMicroservicesModalFrontend();
+  toggleMicroservicesModal(type: 'backend' | 'frontend') {
+    if (type === 'backend') {
+      if (!this.showMicroservicesModalBackend) {
+        this.openMicroservicesModal('backend');
+      } else {
+        this.showMicroservicesModalBackend = false;
+      }
+    } else if (type === 'frontend') {
+      if (!this.showMicroservicesModalFrontend) {
+        this.openMicroservicesModal('frontend');
+      } else {
+        this.showMicroservicesModalFrontend = false;
+      }
     }
   }
 
-  openMicroservicesModalFrontend() {
-    this.microservicesFrontend = ['', ''];
-  }
-
-  closeMicroservicesModalFrontend() {}
-
+  // Añade un nuevo microservicio
   addMicroservice(type: 'backend' | 'frontend') {
     if (type === 'backend') {
       this.microservicesBackend.push('');
-    } else if (type === 'frontend') {
+    } else {
       this.microservicesFrontend.push('');
     }
+  }
+
+  // Elimina un microservicio específico
+  removeMicroservice(type: 'backend' | 'frontend', index: number) {
+    if (type === 'backend') {
+      this.microservicesBackend.splice(index, 1);
+    } else {
+      this.microservicesFrontend.splice(index, 1);
+    }
+  }
+
+  // Cierra el modal sin guardar cambios
+  closeMicroservicesModal(type: 'backend' | 'frontend') {
+    if (type === 'backend') {
+      this.showMicroservicesModalBackend = false;
+    } else {
+      this.showMicroservicesModalFrontend = false;
+    }
+  }
+
+  saveMicroservices(type: 'backend' | 'frontend') {
+    if (type === 'backend') {
+      console.log(
+        'Microservicios Backend guardados:',
+        this.microservicesBackend
+      );
+    } else {
+      console.log(
+        'Microservicios Frontend guardados:',
+        this.microservicesFrontend
+      );
+    }
+    this.closeMicroservicesModal(type);
   }
 }

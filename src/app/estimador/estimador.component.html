@@ -632,7 +632,7 @@
                 id="microservicesSwitchBackend"
                 class="sr-only"
                 [(ngModel)]="showMicroservicesModalBackend"
-                (change)="toggleMicroservicesModalBackend()"
+                (change)="toggleMicroservicesModal('backend')"
               />
               <div class="block bg-gray-300 w-10 h-6 rounded-full"></div>
               <div
@@ -728,7 +728,7 @@
                 id="microservicesSwitchFrontend"
                 class="sr-only"
                 [(ngModel)]="showMicroservicesModalFrontend"
-                (change)="toggleMicroservicesModalFrontend()"
+                (change)="toggleMicroservicesModal('frontend')"
               />
               <div class="block bg-gray-300 w-10 h-6 rounded-full"></div>
               <div
@@ -815,34 +815,62 @@
 
 <div
   *ngIf="showMicroservicesModalBackend"
-  class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
+  class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
 >
   <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-    <h2 class="text-xl font-semibold mb-4">
-      Configurar Microservicios Backend
+    <h2 class="text-xl font-bold mb-4 text-gray-800">
+      Configuración de Microservicios Backend
     </h2>
-    <div class="space-y-4">
-      <div *ngFor="let service of microservicesBackend; let i = index">
-        <input
-          type="text"
-          [(ngModel)]="microservicesBackend[i]"
-          class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-          placeholder="Nombre del microservicio Backend"
-        />
+    <div class="mb-4">
+      <label class="block text-sm font-medium text-gray-700">
+        Configuración de Microservicios Backend
+      </label>
+      <div class="space-y-2">
+        <div
+          *ngFor="
+            let microservice of microservicesBackend;
+            let i = index;
+            trackBy: trackByIndex
+          "
+          class="flex items-center"
+        >
+          <input
+            type="text"
+            [(ngModel)]="microservicesBackend[i]"
+            name="microserviceBackend{{ i }}"
+            class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+            required
+          />
+          <button
+            *ngIf="i >= 2"
+            type="button"
+            (click)="removeMicroservice('backend', i)"
+            class="ml-2 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-3 rounded w-full"
+          >
+            <i class="fa-solid fa-times"></i>
+          </button>
+        </div>
+        <button
+          type="button"
+          (click)="addMicroservice('backend')"
+          class="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full"
+        >
+          <i class="fa-solid fa-plus"></i> Agregar Microservicio
+        </button>
       </div>
-      <button
-        (click)="addMicroservice('backend')"
-        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-4"
-      >
-        +
-      </button>
     </div>
     <div class="flex justify-end mt-4">
       <button
-        (click)="closeMicroservicesModalBackend()"
-        class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+        class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded mr-2"
+        (click)="closeMicroservicesModal('backend')"
       >
-        Cerrar
+        Cancelar
+      </button>
+      <button
+        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        (click)="saveMicroservices('backend')"
+      >
+        Guardar
       </button>
     </div>
   </div>
@@ -850,34 +878,62 @@
 
 <div
   *ngIf="showMicroservicesModalFrontend"
-  class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
+  class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
 >
   <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-    <h2 class="text-xl font-semibold mb-4">
-      Configurar Microservicios Frontend
+    <h2 class="text-xl font-bold mb-4 text-gray-800">
+      Configuración de Microservicios Frontend
     </h2>
-    <div class="space-y-4">
-      <div *ngFor="let service of microservicesFrontend; let i = index">
-        <input
-          type="text"
-          [(ngModel)]="microservicesFrontend[i]"
-          class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-          placeholder="Nombre del microservicio Frontend"
-        />
+    <div class="mb-4">
+      <label class="block text-sm font-medium text-gray-700">
+        Configuración de Microservicios Frontend
+      </label>
+      <div class="space-y-2">
+        <div
+          *ngFor="
+            let microservice of microservicesFrontend;
+            let i = index;
+            trackBy: trackByIndex
+          "
+          class="flex items-center"
+        >
+          <input
+            type="text"
+            [(ngModel)]="microservicesFrontend[i]"
+            name="microserviceFrontend{{ i }}"
+            class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+            required
+          />
+          <button
+            *ngIf="i >= 2"
+            type="button"
+            (click)="removeMicroservice('frontend', i)"
+            class="ml-2 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-3 rounded w-full"
+          >
+            <i class="fa-solid fa-times"></i>
+          </button>
+        </div>
+        <button
+          type="button"
+          (click)="addMicroservice('frontend')"
+          class="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full"
+        >
+          <i class="fa-solid fa-plus"></i> Agregar Microservicio
+        </button>
       </div>
-      <button
-        (click)="addMicroservice('frontend')"
-        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-4"
-      >
-        +
-      </button>
     </div>
     <div class="flex justify-end mt-4">
       <button
-        (click)="closeMicroservicesModalFrontend()"
-        class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+        class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded mr-2"
+        (click)="closeMicroservicesModal('frontend')"
       >
-        Cerrar
+        Cancelar
+      </button>
+      <button
+        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        (click)="saveMicroservices('frontend')"
+      >
+        Guardar
       </button>
     </div>
   </div>
