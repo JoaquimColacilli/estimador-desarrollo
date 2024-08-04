@@ -168,6 +168,11 @@ export class EstimadorComponent implements OnInit {
   activeTab: 'backend' | 'frontend' = 'backend';
   showWarningModal = false;
   isFormModalOpen = false;
+  showMicroservicesModalBackend = false;
+  showMicroservicesModalFrontend = false;
+
+  microservicesBackend: string[] = [];
+  microservicesFrontend: string[] = [];
 
   public pieChartLabels: string[] = [
     'Análisis Funcional',
@@ -606,6 +611,42 @@ export class EstimadorComponent implements OnInit {
       this.originalFormData = JSON.parse(JSON.stringify(this.formData));
       console.log('Formulario enviado:', this.formData);
       this.closeFormModal();
+    }
+  }
+
+  toggleMicroservicesModalBackend() {
+    if (this.showMicroservicesModalBackend) {
+      this.openMicroservicesModalBackend();
+    } else {
+      this.closeMicroservicesModalBackend();
+    }
+  }
+
+  openMicroservicesModalBackend() {
+    this.microservicesBackend = ['', ''];
+  }
+
+  closeMicroservicesModalBackend() {}
+
+  toggleMicroservicesModalFrontend() {
+    if (this.showMicroservicesModalFrontend) {
+      this.openMicroservicesModalFrontend();
+    } else {
+      this.closeMicroservicesModalFrontend();
+    }
+  }
+
+  openMicroservicesModalFrontend() {
+    this.microservicesFrontend = ['', ''];
+  }
+
+  closeMicroservicesModalFrontend() {}
+
+  addMicroservice(type: 'backend' | 'frontend') {
+    if (type === 'backend') {
+      this.microservicesBackend.push('');
+    } else if (type === 'frontend') {
+      this.microservicesFrontend.push('');
     }
   }
 }

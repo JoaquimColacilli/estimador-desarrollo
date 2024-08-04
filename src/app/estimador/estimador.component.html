@@ -619,11 +619,37 @@
 
       <div
         *ngIf="showTareasCard"
-        class="bg-white shadow-md rounded-lg p-6 w-full md:w-1/2 ml-6 transition-all h-full flex flex-col"
+        class="bg-white shadow-md rounded-lg p-6 w-full md:w-1/2 ml-6 transition-all h-full flex flex-col relative"
       >
+        <div class="absolute top-0 right-0 mt-4 mr-4 flex items-center">
+          <label
+            for="microservicesSwitchBackend"
+            class="flex items-center cursor-pointer"
+          >
+            <div class="relative">
+              <input
+                type="checkbox"
+                id="microservicesSwitchBackend"
+                class="sr-only"
+                [(ngModel)]="showMicroservicesModalBackend"
+                (change)="toggleMicroservicesModalBackend()"
+              />
+              <div class="block bg-gray-300 w-10 h-6 rounded-full"></div>
+              <div
+                class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition"
+              ></div>
+            </div>
+          </label>
+          <i
+            class="fa-solid fa-info-circle ml-2"
+            title="Este switch permitirá configurar múltiples microservicios para Backend."
+          ></i>
+        </div>
+
         <h2 class="text-2xl font-semibold mb-2 text-gray-700">
           Agregar Tareas Backend
         </h2>
+
         <div class="mb-2 flex items-center">
           <div class="w-3/4 mr-4">
             <label
@@ -689,11 +715,38 @@
 
       <div
         *ngIf="showFrontendTareasCard"
-        class="bg-white shadow-md rounded-lg p-6 w-full md:w-1/2 ml-6 transition-all h-full flex flex-col"
+        class="bg-white shadow-md rounded-lg p-6 w-full md:w-1/2 ml-6 transition-all h-full flex flex-col relative"
       >
+        <div class="absolute top-0 right-0 mt-4 mr-4 flex items-center">
+          <label
+            for="microservicesSwitchFrontend"
+            class="flex items-center cursor-pointer"
+          >
+            <div class="relative">
+              <input
+                type="checkbox"
+                id="microservicesSwitchFrontend"
+                class="sr-only"
+                [(ngModel)]="showMicroservicesModalFrontend"
+                (change)="toggleMicroservicesModalFrontend()"
+              />
+              <div class="block bg-gray-300 w-10 h-6 rounded-full"></div>
+              <div
+                class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition"
+              ></div>
+            </div>
+          </label>
+          <i
+            class="fa-solid fa-info-circle ml-2"
+            title="Este switch permitirá configurar múltiples microservicios para Frontend."
+          ></i>
+        </div>
+
         <h2 class="text-2xl font-semibold mb-2 text-gray-700">
           Agregar Tareas Frontend
         </h2>
+        <!-- Resto del contenido -->
+
         <div class="mb-2 flex items-center">
           <div class="w-3/4 mr-4">
             <label
@@ -756,6 +809,76 @@
           </li>
         </ul>
       </div>
+    </div>
+  </div>
+</div>
+
+<div
+  *ngIf="showMicroservicesModalBackend"
+  class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
+>
+  <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+    <h2 class="text-xl font-semibold mb-4">
+      Configurar Microservicios Backend
+    </h2>
+    <div class="space-y-4">
+      <div *ngFor="let service of microservicesBackend; let i = index">
+        <input
+          type="text"
+          [(ngModel)]="microservicesBackend[i]"
+          class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+          placeholder="Nombre del microservicio Backend"
+        />
+      </div>
+      <button
+        (click)="addMicroservice('backend')"
+        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-4"
+      >
+        +
+      </button>
+    </div>
+    <div class="flex justify-end mt-4">
+      <button
+        (click)="closeMicroservicesModalBackend()"
+        class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+      >
+        Cerrar
+      </button>
+    </div>
+  </div>
+</div>
+
+<div
+  *ngIf="showMicroservicesModalFrontend"
+  class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
+>
+  <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+    <h2 class="text-xl font-semibold mb-4">
+      Configurar Microservicios Frontend
+    </h2>
+    <div class="space-y-4">
+      <div *ngFor="let service of microservicesFrontend; let i = index">
+        <input
+          type="text"
+          [(ngModel)]="microservicesFrontend[i]"
+          class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+          placeholder="Nombre del microservicio Frontend"
+        />
+      </div>
+      <button
+        (click)="addMicroservice('frontend')"
+        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-4"
+      >
+        +
+      </button>
+    </div>
+    <div class="flex justify-end mt-4">
+      <button
+        (click)="closeMicroservicesModalFrontend()"
+        class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+      >
+        Cerrar
+      </button>
     </div>
   </div>
 </div>
