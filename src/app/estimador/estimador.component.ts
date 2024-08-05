@@ -614,16 +614,6 @@ export class EstimadorComponent implements OnInit {
     }
   }
 
-  openMicroservicesModal(type: 'backend' | 'frontend') {
-    if (type === 'backend') {
-      this.microservicesBackend = ['', ''];
-      this.showMicroservicesModalBackend = true;
-    } else if (type === 'frontend') {
-      this.microservicesFrontend = ['', ''];
-      this.showMicroservicesModalFrontend = true;
-    }
-  }
-
   toggleMicroservicesModal(type: 'backend' | 'frontend') {
     if (type === 'backend') {
       if (!this.showMicroservicesModalBackend) {
@@ -640,7 +630,6 @@ export class EstimadorComponent implements OnInit {
     }
   }
 
-  // Añade un nuevo microservicio
   addMicroservice(type: 'backend' | 'frontend') {
     if (type === 'backend') {
       this.microservicesBackend.push('');
@@ -649,7 +638,6 @@ export class EstimadorComponent implements OnInit {
     }
   }
 
-  // Elimina un microservicio específico
   removeMicroservice(type: 'backend' | 'frontend', index: number) {
     if (type === 'backend') {
       this.microservicesBackend.splice(index, 1);
@@ -658,27 +646,78 @@ export class EstimadorComponent implements OnInit {
     }
   }
 
-  // Cierra el modal sin guardar cambios
+  saveMicroservices(type: 'backend' | 'frontend') {
+    let isValid = true;
+
+    if (type === 'backend') {
+      this.formSubmitted = true;
+
+      // Validar que los dos primeros campos no estén vacíos
+      if (!this.microservicesBackend[0] || !this.microservicesBackend[1]) {
+        isValid = false;
+      }
+
+      // Validar que los campos adicionales no estén vacíos
+      for (let i = 2; i < this.microservicesBackend.length; i++) {
+        if (!this.microservicesBackend[i]) {
+          isValid = false;
+        }
+      }
+
+      if (isValid) {
+        console.log(
+          'Microservicios Backend guardados:',
+          this.microservicesBackend
+        );
+        this.closeMicroservicesModal(type);
+      }
+    } else if (type === 'frontend') {
+      this.formSubmitted = true;
+
+      // Validar que los dos primeros campos no estén vacíos
+      if (!this.microservicesFrontend[0] || !this.microservicesFrontend[1]) {
+        isValid = false;
+      }
+
+      // Validar que los campos adicionales no estén vacíos
+      for (let i = 2; i < this.microservicesFrontend.length; i++) {
+        if (!this.microservicesFrontend[i]) {
+          isValid = false;
+        }
+      }
+
+      if (isValid) {
+        console.log(
+          'Microservicios Frontend guardados:',
+          this.microservicesFrontend
+        );
+        this.closeMicroservicesModal(type);
+      }
+    }
+  }
+
+  openMicroservicesModal(type: 'backend' | 'frontend') {
+    this.formSubmitted = false; // Resetea la variable de formulario enviado para quitar las validaciones visuales
+
+    if (type === 'backend') {
+      if (this.microservicesBackend.length === 0) {
+        this.microservicesBackend = ['', ''];
+      }
+      this.showMicroservicesModalBackend = true;
+    } else if (type === 'frontend') {
+      if (this.microservicesFrontend.length === 0) {
+        this.microservicesFrontend = ['', ''];
+      }
+      this.showMicroservicesModalFrontend = true;
+    }
+  }
+
   closeMicroservicesModal(type: 'backend' | 'frontend') {
     if (type === 'backend') {
       this.showMicroservicesModalBackend = false;
     } else {
       this.showMicroservicesModalFrontend = false;
     }
-  }
-
-  saveMicroservices(type: 'backend' | 'frontend') {
-    if (type === 'backend') {
-      console.log(
-        'Microservicios Backend guardados:',
-        this.microservicesBackend
-      );
-    } else {
-      console.log(
-        'Microservicios Frontend guardados:',
-        this.microservicesFrontend
-      );
-    }
-    this.closeMicroservicesModal(type);
+    this.formSubmitted = false;
   }
 }

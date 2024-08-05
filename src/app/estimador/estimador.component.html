@@ -622,27 +622,10 @@
         class="bg-white shadow-md rounded-lg p-6 w-full md:w-1/2 ml-6 transition-all h-full flex flex-col relative"
       >
         <div class="absolute top-0 right-0 mt-4 mr-4 flex items-center">
-          <label
-            for="microservicesSwitchBackend"
-            class="flex items-center cursor-pointer"
-          >
-            <div class="relative">
-              <input
-                type="checkbox"
-                id="microservicesSwitchBackend"
-                class="sr-only"
-                [(ngModel)]="showMicroservicesModalBackend"
-                (change)="toggleMicroservicesModal('backend')"
-              />
-              <div class="block bg-gray-300 w-10 h-6 rounded-full"></div>
-              <div
-                class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition"
-              ></div>
-            </div>
-          </label>
           <i
-            class="fa-solid fa-info-circle ml-2"
-            title="Este switch permitirá configurar múltiples microservicios para Backend."
+            class="fa-solid fa-cog cursor-pointer text-gray-700"
+            title="Este botón permitirá configurar múltiples microservicios para Backend."
+            (click)="toggleMicroservicesModal('backend')"
           ></i>
         </div>
 
@@ -718,27 +701,10 @@
         class="bg-white shadow-md rounded-lg p-6 w-full md:w-1/2 ml-6 transition-all h-full flex flex-col relative"
       >
         <div class="absolute top-0 right-0 mt-4 mr-4 flex items-center">
-          <label
-            for="microservicesSwitchFrontend"
-            class="flex items-center cursor-pointer"
-          >
-            <div class="relative">
-              <input
-                type="checkbox"
-                id="microservicesSwitchFrontend"
-                class="sr-only"
-                [(ngModel)]="showMicroservicesModalFrontend"
-                (change)="toggleMicroservicesModal('frontend')"
-              />
-              <div class="block bg-gray-300 w-10 h-6 rounded-full"></div>
-              <div
-                class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition"
-              ></div>
-            </div>
-          </label>
           <i
-            class="fa-solid fa-info-circle ml-2"
-            title="Este switch permitirá configurar múltiples microservicios para Frontend."
+            class="fa-solid fa-cog cursor-pointer text-gray-700"
+            title="Este botón permitirá configurar múltiples microservicios para Frontend."
+            (click)="toggleMicroservicesModal('frontend')"
           ></i>
         </div>
 
@@ -822,9 +788,6 @@
       Configuración de Microservicios Backend
     </h2>
     <div class="mb-4">
-      <label class="block text-sm font-medium text-gray-700">
-        Configuración de Microservicios Backend
-      </label>
       <div class="space-y-2">
         <div
           *ngFor="
@@ -832,23 +795,44 @@
             let i = index;
             trackBy: trackByIndex
           "
-          class="flex items-center"
+          class="flex flex-col"
         >
-          <input
-            type="text"
-            [(ngModel)]="microservicesBackend[i]"
-            name="microserviceBackend{{ i }}"
-            class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            required
-          />
-          <button
-            *ngIf="i >= 2"
-            type="button"
-            (click)="removeMicroservice('backend', i)"
-            class="ml-2 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-3 rounded w-full"
+          <!-- Mensaje de validación para los dos primeros inputs -->
+          <div
+            *ngIf="
+              formSubmitted &&
+              i < 2 &&
+              (!microservicesBackend[0] || !microservicesBackend[1])
+            "
+            class="text-red-500 text-sm mb-1"
           >
-            <i class="fa-solid fa-times"></i>
-          </button>
+            Deben haber al menos dos microservicios ingresados.
+          </div>
+          <!-- Mensaje de validación para los inputs adicionales -->
+          <div
+            *ngIf="formSubmitted && i >= 2 && !microservice"
+            class="text-red-500 text-sm mb-1"
+          >
+            Este campo no puede estar vacío.
+          </div>
+          <div class="flex items-center">
+            <input
+              type="text"
+              [(ngModel)]="microservicesBackend[i]"
+              name="microserviceBackend{{ i }}"
+              class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+              required
+              placeholder="Nombre microservicio"
+            />
+            <button
+              *ngIf="i >= 2"
+              type="button"
+              (click)="removeMicroservice('backend', i)"
+              class="ml-2 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-3 rounded w-1/3"
+            >
+              <i class="fa-solid fa-times"></i>
+            </button>
+          </div>
         </div>
         <button
           type="button"
@@ -885,9 +869,6 @@
       Configuración de Microservicios Frontend
     </h2>
     <div class="mb-4">
-      <label class="block text-sm font-medium text-gray-700">
-        Configuración de Microservicios Frontend
-      </label>
       <div class="space-y-2">
         <div
           *ngFor="
@@ -895,23 +876,44 @@
             let i = index;
             trackBy: trackByIndex
           "
-          class="flex items-center"
+          class="flex flex-col"
         >
-          <input
-            type="text"
-            [(ngModel)]="microservicesFrontend[i]"
-            name="microserviceFrontend{{ i }}"
-            class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            required
-          />
-          <button
-            *ngIf="i >= 2"
-            type="button"
-            (click)="removeMicroservice('frontend', i)"
-            class="ml-2 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-3 rounded w-full"
+          <!-- Mensaje de validación para los dos primeros inputs -->
+          <div
+            *ngIf="
+              formSubmitted &&
+              i < 2 &&
+              (!microservicesFrontend[0] || !microservicesFrontend[1])
+            "
+            class="text-red-500 text-sm mb-1"
           >
-            <i class="fa-solid fa-times"></i>
-          </button>
+            Deben haber al menos dos microservicios ingresados.
+          </div>
+          <!-- Mensaje de validación para los inputs adicionales -->
+          <div
+            *ngIf="formSubmitted && i >= 2 && !microservice"
+            class="text-red-500 text-sm mb-1"
+          >
+            Este campo no puede estar vacío.
+          </div>
+          <div class="flex items-center">
+            <input
+              type="text"
+              [(ngModel)]="microservicesFrontend[i]"
+              name="microserviceFrontend{{ i }}"
+              class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+              required
+              placeholder="Nombre microservicio"
+            />
+            <button
+              *ngIf="i >= 2"
+              type="button"
+              (click)="removeMicroservice('frontend', i)"
+              class="ml-2 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-3 rounded w-1/3"
+            >
+              <i class="fa-solid fa-times"></i>
+            </button>
+          </div>
         </div>
         <button
           type="button"
