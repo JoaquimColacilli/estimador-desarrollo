@@ -181,6 +181,72 @@
           </div>
         </div>
 
+        <!-- Microservicio Backend -->
+        <div
+          class="mb-4"
+          *ngIf="
+            microservicesBackend.length === 0 &&
+            (desarrolloHoras || tareas.length !== 0)
+          "
+        >
+          <label
+            for="microservicioBackend"
+            class="block text-sm font-medium text-gray-700"
+          >
+            Microservicio Backend *
+          </label>
+          <input
+            type="text"
+            id="microservicioBackend"
+            [(ngModel)]="formData.microservicioBackend"
+            name="microservicioBackend"
+            [ngClass]="{
+              'border-red-500': !formData.microservicioBackend && formSubmitted
+            }"
+            class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+            required
+          />
+          <div
+            *ngIf="!formData.microservicioBackend && formSubmitted"
+            class="text-red-500 text-sm mt-1"
+          >
+            El campo "Microservicio Backend" es de carácter obligatorio.
+          </div>
+        </div>
+
+        <!-- Microservicio Frontend -->
+        <div
+          class="mb-4"
+          *ngIf="
+            microservicesFrontend.length === 0 &&
+            (frontendHoras || tareasFrontend.length !== 0)
+          "
+        >
+          <label
+            for="microservicioFrontend"
+            class="block text-sm font-medium text-gray-700"
+          >
+            Microservicio Frontend *
+          </label>
+          <input
+            type="text"
+            id="microservicioFrontend"
+            [(ngModel)]="formData.microservicioFrontend"
+            name="microservicioFrontend"
+            [ngClass]="{
+              'border-red-500': !formData.microservicioFrontend && formSubmitted
+            }"
+            class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+            required
+          />
+          <div
+            *ngIf="!formData.microservicioFrontend && formSubmitted"
+            class="text-red-500 text-sm mt-1"
+          >
+            El campo "Microservicio Frontend" es de carácter obligatorio.
+          </div>
+        </div>
+
         <!-- Descripción -->
         <div class="mb-4">
           <label

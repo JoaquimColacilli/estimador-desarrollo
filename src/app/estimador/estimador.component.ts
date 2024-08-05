@@ -157,6 +157,8 @@ export class EstimadorComponent implements OnInit {
     proyecto: '',
     desarrolladores: [''],
     descripcion: '',
+    microservicioBackend: '',
+    microservicioFrontend: '',
   };
   originalFormData = {
     tituloDocumento: '',
@@ -628,7 +630,11 @@ export class EstimadorComponent implements OnInit {
     const isValid =
       this.formData.tituloDocumento &&
       this.formData.proyecto &&
-      this.formData.desarrolladores.every((dev) => dev);
+      this.formData.desarrolladores.every((dev) => dev) &&
+      (this.microservicesBackend.length > 0 ||
+        this.formData.microservicioBackend) &&
+      (this.microservicesFrontend.length > 0 ||
+        this.formData.microservicioFrontend);
 
     if (isValid) {
       this.originalFormData = JSON.parse(JSON.stringify(this.formData));
