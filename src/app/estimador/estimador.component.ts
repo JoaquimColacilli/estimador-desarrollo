@@ -144,10 +144,11 @@ export class EstimadorComponent implements OnInit {
   tareaHoras: number | null = null;
   totalCalculoBackend: number = 0;
   totalCalculoFrontend: number = 0;
-  tareas: { nombre: string; horas: number }[] = [];
+  tareas: { nombre: string; horas: number; microservice?: string }[] = [];
+  tareasFrontend: { nombre: string; horas: number; microservice?: string }[] =
+    [];
   tareaNombreFrontend: string = '';
   tareaHorasFrontend: number | null = null;
-  tareasFrontend: { nombre: string; horas: number }[] = [];
   isBrowser: boolean;
   showConfiguracion: boolean = false;
   formSubmitted = false;
@@ -170,10 +171,12 @@ export class EstimadorComponent implements OnInit {
   isFormModalOpen = false;
   showMicroservicesModalBackend = false;
   showMicroservicesModalFrontend = false;
-
+  selectedMicroserviceBackend: string | null = null;
+  selectedMicroserviceFrontend: string | null = null;
   microservicesBackend: string[] = [];
   microservicesFrontend: string[] = [];
-
+  private tempMicroservicesBackend: string[] = [];
+  private tempMicroservicesFrontend: string[] = [];
   public pieChartLabels: string[] = [
     'Análisis Funcional',
     'Análisis Técnico',
@@ -201,6 +204,18 @@ export class EstimadorComponent implements OnInit {
       import('html2pdf.js').then((module) => {
         html2pdf = module.default;
       });
+    }
+  }
+
+  resetTareaFields(type: 'backend' | 'frontend') {
+    if (type === 'backend') {
+      this.tareaNombre = '';
+      this.tareaHoras = null;
+      this.selectedMicroserviceBackend = null;
+    } else if (type === 'frontend') {
+      this.tareaNombreFrontend = '';
+      this.tareaHorasFrontend = null;
+      this.selectedMicroserviceFrontend = null;
     }
   }
 
@@ -530,19 +545,25 @@ export class EstimadorComponent implements OnInit {
         pruebasIntegracionFront: 0,
         implementacionYSoporteFront: 0,
         gestionFront: 0,
-        documentacionBack: 8, // Default de Documentación Backend
-        documentacionFront: 8, // Default de Documentación Frontend
+        documentacionBack: 8,
+        documentacionFront: 8,
       };
     }
+
     if (
       type === 'backend' &&
       this.tareaNombre &&
       this.tareaHoras &&
       this.tareaHoras > 0
     ) {
-      this.tareas.push({ nombre: this.tareaNombre, horas: this.tareaHoras });
+      this.tareas.push({
+        nombre: this.tareaNombre,
+        horas: this.tareaHoras,
+        microservice: this.selectedMicroserviceBackend || '', // Incluye el microservicio seleccionado
+      });
       this.tareaNombre = '';
       this.tareaHoras = null;
+      this.selectedMicroserviceBackend = null; // Resetear el select
 
       this.calcularTotalHoras();
       this.updatePieChartData();
@@ -556,9 +577,11 @@ export class EstimadorComponent implements OnInit {
       this.tareasFrontend.push({
         nombre: this.tareaNombreFrontend,
         horas: this.tareaHorasFrontend,
+        microservice: this.selectedMicroserviceFrontend || '', // Incluye el microservicio seleccionado
       });
       this.tareaNombreFrontend = '';
       this.tareaHorasFrontend = null;
+      this.selectedMicroserviceFrontend = null; // Resetear el select
 
       this.calcularTotalHoras();
       this.updatePieChartData();
@@ -646,6 +669,39 @@ export class EstimadorComponent implements OnInit {
     }
   }
 
+  openMicroservicesModal(type: 'backend' | 'frontend') {
+    this.formSubmitted = false; // Resetea la variable de formulario enviado para quitar las validaciones visuales
+
+    if (type === 'backend') {
+      // Almacena los valores actuales en las variables temporales
+      this.tempMicroservicesBackend = [...this.microservicesBackend];
+      if (this.microservicesBackend.length === 0) {
+        this.microservicesBackend = ['', ''];
+      }
+      this.showMicroservicesModalBackend = true;
+    } else if (type === 'frontend') {
+      // Almacena los valores actuales en las variables temporales
+      this.tempMicroservicesFrontend = [...this.microservicesFrontend];
+      if (this.microservicesFrontend.length === 0) {
+        this.microservicesFrontend = ['', ''];
+      }
+      this.showMicroservicesModalFrontend = true;
+    }
+  }
+
+  closeMicroservicesModal(type: 'backend' | 'frontend') {
+    if (type === 'backend') {
+      // Restaura los valores de las variables temporales si se cierra el modal
+      this.microservicesBackend = [...this.tempMicroservicesBackend];
+      this.showMicroservicesModalBackend = false;
+    } else {
+      // Restaura los valores de las variables temporales si se cierra el modal
+      this.microservicesFrontend = [...this.tempMicroservicesFrontend];
+      this.showMicroservicesModalFrontend = false;
+    }
+    this.formSubmitted = false;
+  }
+
   saveMicroservices(type: 'backend' | 'frontend') {
     let isValid = true;
 
@@ -669,7 +725,7 @@ export class EstimadorComponent implements OnInit {
           'Microservicios Backend guardados:',
           this.microservicesBackend
         );
-        this.closeMicroservicesModal(type);
+        this.showMicroservicesModalBackend = false; // Cierra el modal después de guardar
       }
     } else if (type === 'frontend') {
       this.formSubmitted = true;
@@ -691,33 +747,8 @@ export class EstimadorComponent implements OnInit {
           'Microservicios Frontend guardados:',
           this.microservicesFrontend
         );
-        this.closeMicroservicesModal(type);
+        this.showMicroservicesModalFrontend = false; // Cierra el modal después de guardar
       }
     }
-  }
-
-  openMicroservicesModal(type: 'backend' | 'frontend') {
-    this.formSubmitted = false; // Resetea la variable de formulario enviado para quitar las validaciones visuales
-
-    if (type === 'backend') {
-      if (this.microservicesBackend.length === 0) {
-        this.microservicesBackend = ['', ''];
-      }
-      this.showMicroservicesModalBackend = true;
-    } else if (type === 'frontend') {
-      if (this.microservicesFrontend.length === 0) {
-        this.microservicesFrontend = ['', ''];
-      }
-      this.showMicroservicesModalFrontend = true;
-    }
-  }
-
-  closeMicroservicesModal(type: 'backend' | 'frontend') {
-    if (type === 'backend') {
-      this.showMicroservicesModalBackend = false;
-    } else {
-      this.showMicroservicesModalFrontend = false;
-    }
-    this.formSubmitted = false;
   }
 }
