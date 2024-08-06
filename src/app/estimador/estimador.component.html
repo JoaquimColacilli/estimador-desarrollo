@@ -1380,6 +1380,90 @@
             </div>
           </ng-container>
 
+          <ng-container
+            *ngIf="totalCalculoBackend > 0 || totalCalculoFrontend > 0"
+          >
+            <table class="table-auto w-full mt-4">
+              <thead>
+                <tr class="bg-gray-100">
+                  <th
+                    style="
+                      padding: 8px;
+                      border: 1px solid #e5e7eb;
+                      text-align: left;
+                      font-weight: 600;
+                      color: #4b5563;
+                      vertical-align: middle;
+                    "
+                  >
+                    Cálculo Análisis
+                  </th>
+                  <th
+                    style="
+                      padding: 8px;
+                      border: 1px solid #e5e7eb;
+                      text-align: left;
+                      font-weight: 600;
+                      color: #4b5563;
+                      vertical-align: middle;
+                    "
+                    *ngIf="totalBackendHoras > 0"
+                  >
+                    Backend
+                  </th>
+                  <th
+                    style="
+                      padding: 8px;
+                      border: 1px solid #e5e7eb;
+                      text-align: left;
+                      font-weight: 600;
+                      color: #4b5563;
+                      vertical-align: middle;
+                    "
+                    *ngIf="totalFrontendHoras > 0"
+                  >
+                    Frontend
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let campo of camposEstimacionBackend">
+                  <td class="px-4 py-2 border">{{ campo.label }}</td>
+                  <ng-container *ngIf="totalBackendHoras > 0">
+                    <td class="px-4 py-2 border text-right">
+                      {{ estimaciones?.[campo.key + 'Back'] }} Hs.
+                    </td>
+                  </ng-container>
+                  <ng-container *ngIf="totalFrontendHoras > 0">
+                    <td class="px-4 py-2 border text-right">
+                      {{ estimaciones?.[campo.key + 'Front'] }} Hs.
+                    </td>
+                  </ng-container>
+                </tr>
+                <tr class="font-bold">
+                  <td class="px-4 py-2 border bg-gray-200">Total</td>
+                  <ng-container *ngIf="totalBackendHoras > 0">
+                    <td class="px-4 py-2 border bg-gray-200 text-right">
+                      {{ totalCalculoBackend }} Hs.
+                    </td>
+                  </ng-container>
+                  <ng-container *ngIf="totalFrontendHoras > 0">
+                    <td class="px-4 py-2 border bg-gray-200 text-right">
+                      {{ totalCalculoFrontend }} Hs.
+                    </td>
+                  </ng-container>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="mt-6 font-bold text-lg text-right">
+              <span>Total Cálculo Análisis:</span>
+              <span class="text-gray-800">
+                {{ totalCalculoBackend + totalCalculoFrontend }} Hs.
+              </span>
+            </div>
+          </ng-container>
+
           <!-- Cálculo Análisis -->
           <ng-container
             *ngIf="totalCalculoBackend > 0 || totalCalculoFrontend > 0"
