@@ -178,8 +178,6 @@ export class EstimadorComponent implements OnInit {
   microservicesBackend: string[] = [];
   microservicesFrontend: string[] = [];
   currentDate: string = '';
-  microserviceWarning: boolean = false;
-
   private tempMicroservicesBackend: string[] = [];
   private tempMicroservicesFrontend: string[] = [];
   public pieChartLabels: string[] = [
@@ -239,8 +237,6 @@ export class EstimadorComponent implements OnInit {
       this.frontendHoras ||
       this.tareas.length > 0 ||
       this.tareasFrontend.length > 0;
-
-    this.microserviceWarning = false; // Resetea la advertencia de microservicios
 
     if (
       !tituloDocumento ||
