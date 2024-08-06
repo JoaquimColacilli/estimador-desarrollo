@@ -5,7 +5,8 @@ import { EstimadorService } from '../service/estimador.service';
 import { NgChartsModule } from 'ng2-charts';
 import { ChartData, ChartType } from 'chart.js';
 import { CommonModule } from '@angular/common';
-import { jsPDF } from 'jspdf';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 let html2pdf: any;
 
@@ -257,67 +258,214 @@ export class EstimadorComponent implements OnInit {
   }
 
   downloadPDF(): void {
-    console.log(this.formData);
-    if (this.isBrowser && html2pdf) {
-      const pdfContent = document.getElementById('pdf-content');
+    const doc = new jsPDF('portrait', 'in', 'letter');
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 0.5;
+    let currentY = margin;
 
-      if (pdfContent) {
-        pdfContent.style.display = 'block'; // Mostrar el div oculto para el PDF
+    // Título del Documento
+    doc.setFontSize(16);
+    doc.text(this.formData.tituloDocumento, pageWidth / 2, currentY, {
+      align: 'center',
+    });
+    currentY += 0.5;
+
+    // Información general en una tabla
+    autoTable(doc, {
+      startY: currentY,
+      margin: { left: margin },
+      head: [['Proyecto', 'Autor', 'Versión', 'Descripción']],
+      body: [
+        [
+          this.formData.proyecto,
+          this.formData.desarrolladores.join(', '),
+          '1.0',
+          this.formData.descripcion || 'N/A',
+        ],
+      ],
+    });
+
+    currentY += 1; // Incrementa manualmente la posición Y después de la tabla (ajustar según sea necesario)
+
+    // Registro de Cambios
+    doc.setFontSize(14);
+    doc.text('Registro de Cambios', margin, currentY);
+    currentY += 0.25;
+
+    autoTable(doc, {
+      startY: currentY,
+      margin: { left: margin },
+      head: [
+        [
+          'Versión',
+          'Causa del cambio',
+          'Responsable del cambio',
+          'Fecha del cambio',
+        ],
+      ],
+      body: [
+        [
+          '1.0',
+          'Documento inicial',
+          this.formData.desarrolladores[0],
+          new Date().toLocaleDateString(),
+        ],
+      ],
+    });
+
+    currentY += 1; // Incrementa manualmente la posición Y después de la tabla (ajustar según sea necesario)
+
+    // Salto de página para Resumen de Tareas y Cálculos
+    doc.addPage();
+    currentY = margin;
+
+    doc.setFontSize(14);
+    doc.text('Resumen de Tareas y Cálculos', margin, currentY);
+    currentY += 0.25;
+
+    // Tablas de Backend
+    if (this.totalBackendHoras > 0) {
+      doc.setFontSize(12);
+      // doc.text('Backend', margin, currentY);
+      currentY += 0.25;
+
+      const backendTasks = this.tareas.map((t) => [
+        t.nombre,
+        t.microservice || this.formData.microservicioBackend,
+        `${t.horas} Hs.`,
+      ]);
+      if (this.desarrolloHoras) {
+        backendTasks.push([
+          'Horas de Desarrollo',
+          this.formData.microservicioBackend,
+          `${this.desarrolloHoras} Hs.`,
+        ]);
       }
+      backendTasks.push(['Total Backend', '', `${this.totalBackendHoras} Hs.`]);
 
-      const options = {
-        margin: [0.5, 0.5, 0.5, 0.5], // Márgenes en pulgadas (superior, izquierda, inferior, derecha)
-        filename: this.formData.tituloDocumento + '.pdf',
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }, // Evitar quiebres de página en todos los elementos
-      };
+      autoTable(doc, {
+        startY: currentY,
+        head: [['Tarea', 'Microservicio', 'Horas']],
+        body: backendTasks,
+        margin: { left: margin },
+        styles: { fontSize: 10 }, // Ajusta el tamaño de fuente si quieres que las tablas sean más grandes
+      });
 
-      if (pdfContent) {
-        html2pdf()
-          .from(pdfContent)
-          .set(options)
-          .toPdf()
-          .get('pdf')
-          .then((pdf: any) => {
-            const totalPages = pdf.internal.pages.length - 1; // Obtener el número total de páginas
-            const pageWidth = pdf.internal.pageSize.getWidth(); // Ancho de la página
-            const textWidth = pdf.getTextWidth(`NTT Data`); // Ancho del texto NTT Data
-            for (let i = 1; i <= totalPages; i++) {
-              pdf.setPage(i);
-              pdf.text(
-                `Página ${i} de ${totalPages}`,
-                options.margin[1], // Usa el margen izquierdo
-                pdf.internal.pageSize.getHeight() - options.margin[2] // Usa el margen inferior
-              );
-              pdf.text(
-                `NTT Data`,
-                pageWidth - textWidth - options.margin[1], // Posición en el margen derecho
-                pdf.internal.pageSize.getHeight() - options.margin[2] // Usa el margen inferior
-              );
-            }
-          })
-          .save()
-          .then(() => {
-            if (pdfContent) {
-              pdfContent.style.display = 'none';
-            }
-            console.log('PDF generado y descargado exitosamente.');
-          })
-          .catch((error: any) => {
-            if (pdfContent) {
-              pdfContent.style.display = 'none';
-            }
-            console.error('Error al generar el PDF:', error);
-          });
-      } else {
-        console.error('El elemento a exportar no se encontró.');
-      }
-    } else {
-      console.error('html2pdf no está disponible o no estás en un navegador.');
+      currentY += 1; // Incrementa manualmente la posición Y después de la tabla (ajustar según sea necesario)
     }
-  }
 
+    // Tablas de Frontend
+    if (this.totalFrontendHoras > 0) {
+      doc.setFontSize(12);
+      // doc.text('Frontend', margin, currentY);
+      currentY += 0.25;
+
+      const frontendTasks = this.tareasFrontend.map((t) => [
+        t.nombre,
+        t.microservice || this.formData.microservicioFrontend,
+        `${t.horas} Hs.`,
+      ]);
+      if (this.frontendHoras) {
+        frontendTasks.push([
+          'Horas de Desarrollo',
+          this.formData.microservicioFrontend,
+          `${this.frontendHoras} Hs.`,
+        ]);
+      }
+      frontendTasks.push([
+        'Total Frontend',
+        '',
+        `${this.totalFrontendHoras} Hs.`,
+      ]);
+
+      autoTable(doc, {
+        startY: currentY,
+        head: [['Tarea', 'Microservicio', 'Horas']],
+        body: frontendTasks,
+        margin: { left: margin },
+        styles: { fontSize: 10 }, // Ajusta el tamaño de fuente si quieres que las tablas sean más grandes
+      });
+
+      currentY += 1; // Incrementa manualmente la posición Y después de la tabla (ajustar según sea necesario)
+    }
+
+    // Cálculo Análisis
+    if (this.totalCalculoBackend > 0 || this.totalCalculoFrontend > 0) {
+      doc.setFontSize(14);
+      // doc.text('Cálculo Análisis', margin, currentY);
+      currentY += 0.25;
+
+      autoTable(doc, {
+        startY: currentY,
+        head: [['Cálculo', 'Backend', 'Frontend', 'Total']],
+        body: [
+          ...this.camposEstimacionBackend.map((campo) => [
+            campo.label,
+            `${this.estimaciones[campo.key + 'Back']} Hs.`,
+            `${this.estimaciones[campo.key + 'Front']} Hs.`,
+            `${
+              this.estimaciones[campo.key + 'Back'] +
+              this.estimaciones[campo.key + 'Front']
+            } Hs.`,
+          ]),
+          // Fila de Total Cálculo
+          [
+            'Total Cálculo:',
+            '',
+            '',
+            `${this.totalCalculoBackend + this.totalCalculoFrontend} Hs.`,
+          ],
+        ],
+        margin: { left: margin },
+        styles: { fontSize: 10 },
+      });
+
+      console.log(this.camposEstimacionBackend);
+      currentY += 1; // Incrementa manualmente la posición Y después de la tabla (ajustar según sea necesario)
+    }
+
+    // Desarrollo / Cálculo
+    if (this.totalBackendHoras > 0 || this.totalFrontendHoras > 0) {
+      doc.setFontSize(14);
+      // doc.text('Desarrollo / Cálculo', margin, currentY);
+      currentY += 2;
+
+      autoTable(doc, {
+        startY: currentY,
+        head: [['Desarrollo / Cálculo', 'Backend', 'Frontend', 'Total']],
+        body: [
+          [
+            'Desarrollo',
+            `${this.totalBackendHoras} Hs.`,
+            `${this.totalFrontendHoras} Hs.`,
+            `${this.totalBackendHoras + this.totalFrontendHoras} Hs.`,
+          ],
+          [
+            'Cálculo Análisis',
+            `${this.totalCalculoBackend} Hs.`,
+            `${this.totalCalculoFrontend} Hs.`,
+            `${this.totalCalculoBackend + this.totalCalculoFrontend} Hs.`,
+          ],
+          [
+            'Total Estimación',
+            '',
+            '',
+            `${
+              this.totalBackendHoras +
+              this.totalFrontendHoras +
+              this.totalCalculoBackend +
+              this.totalCalculoFrontend
+            } Hs.`,
+          ],
+        ],
+        margin: { left: margin },
+        styles: { fontSize: 10 },
+      });
+    }
+
+    // Guardar el PDF
+    doc.save(`${this.formData.tituloDocumento}.pdf`);
+  }
   ngOnInit(): void {
     this.currentDate = new Date().toLocaleDateString();
   }
