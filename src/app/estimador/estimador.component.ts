@@ -259,7 +259,6 @@ export class EstimadorComponent implements OnInit {
   downloadPDF(): void {
     console.log(this.formData);
     if (this.isBrowser && html2pdf) {
-      const element = document.getElementById('content-to-export');
       const pdfContent = document.getElementById('pdf-content');
 
       if (pdfContent) {
@@ -269,7 +268,6 @@ export class EstimadorComponent implements OnInit {
       const options = {
         margin: [0.5, 0.5, 0.5, 0.5], // Márgenes en pulgadas (superior, izquierda, inferior, derecha)
         filename: this.formData.tituloDocumento + '.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
         pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }, // Evitar quiebres de página en todos los elementos
@@ -283,11 +281,18 @@ export class EstimadorComponent implements OnInit {
           .get('pdf')
           .then((pdf: any) => {
             const totalPages = pdf.internal.pages.length - 1; // Obtener el número total de páginas
+            const pageWidth = pdf.internal.pageSize.getWidth(); // Ancho de la página
+            const textWidth = pdf.getTextWidth(`NTT Data`); // Ancho del texto NTT Data
             for (let i = 1; i <= totalPages; i++) {
               pdf.setPage(i);
               pdf.text(
                 `Página ${i} de ${totalPages}`,
                 options.margin[1], // Usa el margen izquierdo
+                pdf.internal.pageSize.getHeight() - options.margin[2] // Usa el margen inferior
+              );
+              pdf.text(
+                `NTT Data`,
+                pageWidth - textWidth - options.margin[1], // Posición en el margen derecho
                 pdf.internal.pageSize.getHeight() - options.margin[2] // Usa el margen inferior
               );
             }
