@@ -268,7 +268,7 @@ export class EstimadorComponent implements OnInit {
 
       const options = {
         margin: [0.5, 0.5, 0.5, 0.5], // Márgenes en pulgadas (superior, izquierda, inferior, derecha)
-        filename: this.formData.proyecto + '.pdf',
+        filename: this.formData.tituloDocumento + '.pdf',
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
