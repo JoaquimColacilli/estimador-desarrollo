@@ -177,6 +177,9 @@ export class EstimadorComponent implements OnInit {
   selectedMicroserviceFrontend: string | null = null;
   microservicesBackend: string[] = [];
   microservicesFrontend: string[] = [];
+  currentDate: string = '';
+  microserviceWarning: boolean = false;
+
   private tempMicroservicesBackend: string[] = [];
   private tempMicroservicesFrontend: string[] = [];
   public pieChartLabels: string[] = [
@@ -223,14 +226,29 @@ export class EstimadorComponent implements OnInit {
 
   validateAndDownloadPDF() {
     const { tituloDocumento, proyecto, desarrolladores } = this.formData;
+
+    const isBackendMicroserviceValid =
+      this.microservicesBackend.length > 0 ||
+      this.formData.microservicioBackend;
+    const isFrontendMicroserviceValid =
+      this.microservicesFrontend.length > 0 ||
+      this.formData.microservicioFrontend;
+
+    const hasHoursOrTasks =
+      this.desarrolloHoras ||
+      this.frontendHoras ||
+      this.tareas.length > 0 ||
+      this.tareasFrontend.length > 0;
+
+    this.microserviceWarning = false; // Resetea la advertencia de microservicios
+
     if (
       !tituloDocumento ||
       !proyecto ||
       !desarrolladores[0] ||
-      (!this.desarrolloHoras &&
-        !this.frontendHoras &&
-        this.tareas.length === 0 &&
-        this.tareasFrontend.length === 0)
+      !hasHoursOrTasks ||
+      (this.desarrolloHoras && !isBackendMicroserviceValid) ||
+      (this.frontendHoras && !isFrontendMicroserviceValid)
     ) {
       this.showWarningModal = true;
     } else {
@@ -243,6 +261,7 @@ export class EstimadorComponent implements OnInit {
   }
 
   downloadPDF(): void {
+    console.log(this.formData);
     if (this.isBrowser && html2pdf) {
       const element = document.getElementById('content-to-export');
       const pdfContent = document.getElementById('pdf-content');
@@ -298,7 +317,9 @@ export class EstimadorComponent implements OnInit {
     }
   }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.currentDate = new Date().toLocaleDateString();
+  }
 
   handleFrontendSwitch(): void {
     if (!this.showFrontend) {
@@ -616,6 +637,7 @@ export class EstimadorComponent implements OnInit {
   openFormModal() {
     this.originalFormData = JSON.parse(JSON.stringify(this.formData));
     this.isFormModalOpen = true;
+    this.currentDate = new Date().toLocaleDateString();
   }
 
   closeFormModal() {
@@ -630,13 +652,21 @@ export class EstimadorComponent implements OnInit {
     const isValid =
       this.formData.tituloDocumento &&
       this.formData.proyecto &&
-      this.formData.desarrolladores.every((dev) => dev) &&
-      (this.microservicesBackend.length > 0 ||
-        this.formData.microservicioBackend) &&
-      (this.microservicesFrontend.length > 0 ||
-        this.formData.microservicioFrontend);
+      this.formData.desarrolladores.every((dev) => dev);
 
-    if (isValid) {
+    // Validar microservicios solo si se están mostrando en el formulario
+    const needsBackendMicroservice =
+      this.microservicesBackend.length === 0 &&
+      (this.desarrolloHoras || this.tareas.length > 0);
+    const needsFrontendMicroservice =
+      this.microservicesFrontend.length === 0 &&
+      (this.frontendHoras || this.tareasFrontend.length > 0);
+
+    const isMicroserviceValid =
+      (!needsBackendMicroservice || this.formData.microservicioBackend) &&
+      (!needsFrontendMicroservice || this.formData.microservicioFrontend);
+
+    if (isValid && isMicroserviceValid) {
       this.originalFormData = JSON.parse(JSON.stringify(this.formData));
       console.log('Formulario enviado:', this.formData);
       this.closeFormModal();
