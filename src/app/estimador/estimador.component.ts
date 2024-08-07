@@ -1034,6 +1034,76 @@ export class EstimadorComponent implements OnInit {
         console.log('Texto del PDF:', pdfText);
         const parsedData = this.parsePDFText(pdfText);
         console.log('Datos Parseados:', parsedData);
+
+        // Asignar los datos parseados a las variables correspondientes
+        if (parsedData.estimacion) {
+          this.formData.tituloDocumento = parsedData.estimacion.titulo || '';
+        }
+
+        if (parsedData.projectInfo) {
+          this.formData.proyecto = parsedData.projectInfo.proyecto || '';
+          this.formData.desarrolladores = [parsedData.projectInfo.autor || ''];
+          this.formData.descripcion = parsedData.projectInfo.descripcion || '';
+        }
+
+        if (parsedData.registroCambios.length > 0) {
+          this.formData.microservicioBackend =
+            parsedData.registroCambios[0].causaDelCambio || '';
+        }
+
+        if (parsedData.resumenTareasCalculos) {
+          this.tareas = parsedData.resumenTareasCalculos.tareas.map(
+            (t: any) => ({
+              nombre: t.tarea,
+              horas: parseInt(t.horas.replace(' Hs.', '')),
+              microservice: t.microservicio,
+            })
+          );
+
+          // Asignar horas de backend
+          this.desarrolloHoras = parseInt(
+            parsedData.resumenTareasCalculos.totalBackend.replace(' Hs.', '')
+          );
+        }
+
+        if (this.tareas.length > 0) {
+          this.showTareasCard = true;
+          // No asignar desarrolloHoras si hay tareas
+          this.desarrolloHoras = null;
+        } else {
+          // Asignar horas de backend solo si no hay tareas
+          this.desarrolloHoras = parseInt(
+            parsedData.resumenTareasCalculos.totalBackend.replace(' Hs.', '')
+          );
+        }
+
+        if (parsedData.calculoAnalisis) {
+          this.camposEstimacionBackend.forEach((campo) => {
+            const analisis = parsedData.calculoAnalisis.analisis.find(
+              (a: any) => a.tipo === campo.label
+            );
+            if (analisis) {
+              campo.horas = parseInt(analisis.backend.replace(' Hs.', ''));
+            }
+          });
+        }
+
+        if (parsedData.desarrolloAnalisis) {
+          parsedData.desarrolloAnalisis.desarrollo.forEach((d: any) => {
+            if (d.tipo === 'Desarrollo') {
+              this.frontendHoras = parseInt(d.frontend.replace(' Hs.', ''));
+            }
+          });
+
+          this.totalHoras = parseInt(
+            parsedData.desarrolloAnalisis.totalEstimacion.replace(' Hs.', '')
+          );
+        }
+
+        // Actualizar las estimaciones y el gráfico
+        this.calcularEstimacion();
+        this.updatePieChartData();
+
         this.closeUploadModal();
       };
 
@@ -1067,19 +1137,31 @@ export class EstimadorComponent implements OnInit {
       : null;
 
     // Extraer registro de cambios
-    const changesMatch = pdfText.match(
-      /Versión\s+([\d.]+)\s+Causa del cambio\s+(.+?)\s+Responsable del cambio\s+([^\s]+)\s+Fecha del cambio\s+([\d/]+)/
+    const changesSectionMatch = pdfText.match(
+      /Registro de Cambios\s+Versión\s+Causa del cambio\s+Responsable del cambio\s+Fecha del cambio\s+([\s\S]+?)(?:\n|Resumen de Tareas y Cálculos)/
     );
-    result.registroCambios = changesMatch
-      ? [
-          {
-            version: changesMatch[1].trim(),
-            causaDelCambio: changesMatch[2].trim(),
-            responsableDelCambio: changesMatch[3].trim(),
-            fechaDelCambio: changesMatch[4].trim(),
-          },
-        ]
-      : [];
+
+    if (changesSectionMatch) {
+      const changesLines = changesSectionMatch[1].split('\n').filter(Boolean);
+
+      result.registroCambios = changesLines
+        .map((line) => {
+          const changeMatch = line.match(
+            /(\d+\.\d+)\s+(.+?)\s+(\w+)\s+([\d/]+)/
+          );
+          return changeMatch
+            ? {
+                version: changeMatch[1].trim(),
+                causaDelCambio: changeMatch[2].trim(),
+                responsableDelCambio: changeMatch[3].trim(),
+                fechaDelCambio: changeMatch[4].trim(),
+              }
+            : null;
+        })
+        .filter((change) => change !== null);
+    } else {
+      result.registroCambios = [];
+    }
 
     // Extraer tareas y cálculos
     const backendTasksMatch = pdfText.match(
@@ -1088,20 +1170,24 @@ export class EstimadorComponent implements OnInit {
     result.resumenTareasCalculos = backendTasksMatch
       ? {
           tareas: backendTasksMatch[1]
-            .split(' Hs.')
-            .slice(0, -1)
-            .map((line) => {
-              const taskMatch = line
-                .trim()
-                .match(/(.+)\s+([\w]+)\s+([\d]+\s+Hs.)/);
-              return taskMatch
-                ? {
-                    tarea: taskMatch[1].trim(),
-                    microservicio: taskMatch[2].trim(),
-                    horas: taskMatch[3].trim(),
+            .split(/(\d+\s+Hs\.)/) // Dividir por cada ocurrencia de "XX Hs."
+            .reduce(
+              (acc: any[], current: string, index: number, array: string[]) => {
+                if (index % 2 === 0) {
+                  const taskLine = current.trim();
+                  const taskMatch = taskLine.match(/^(.+?)\s{2,}([\w\s]+)$/);
+                  if (taskMatch) {
+                    acc.push({
+                      tarea: taskMatch[1].trim(),
+                      microservicio: taskMatch[2].trim(),
+                      horas: array[index + 1].trim(), // El siguiente elemento es las horas
+                    });
                   }
-                : null;
-            })
+                }
+                return acc;
+              },
+              []
+            )
             .filter((task) => task !== null),
           totalBackend: backendTasksMatch[2].trim(),
         }
