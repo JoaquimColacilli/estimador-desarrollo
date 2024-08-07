@@ -1032,11 +1032,146 @@ export class EstimadorComponent implements OnInit {
         }
 
         console.log('Texto del PDF:', pdfText);
+        const parsedData = this.parsePDFText(pdfText);
+        console.log('Datos Parseados:', parsedData);
         this.closeUploadModal();
       };
 
       reader.readAsArrayBuffer(this.uploadedFile);
     }
+  }
+
+  parsePDFText(pdfText: string): any {
+    const result: any = {};
+
+    // Extraer "APPSADE-49193 | Estimacion"
+    const estimationMatch = pdfText.match(/(\w+-\d+)\s+\|\s+(\w+)/);
+    result.estimacion = estimationMatch
+      ? {
+          codigo: estimationMatch[1].trim(),
+          titulo: estimationMatch[2].trim(),
+        }
+      : null;
+
+    // Extraer información del proyecto
+    const projectInfoMatch = pdfText.match(
+      /Proyecto\s+([^\s]+)\s+Autor\s+([^\s]+)\s+Versión\s+([\d.]+)\s+Descripción\s+(.+?)\s+(Registro de Cambios|Resumen de Tareas y Cálculos)/
+    );
+    result.projectInfo = projectInfoMatch
+      ? {
+          proyecto: projectInfoMatch[1].trim(),
+          autor: projectInfoMatch[2].trim(),
+          version: projectInfoMatch[3].trim(),
+          descripcion: projectInfoMatch[4].trim(),
+        }
+      : null;
+
+    // Extraer registro de cambios
+    const changesMatch = pdfText.match(
+      /Versión\s+([\d.]+)\s+Causa del cambio\s+(.+?)\s+Responsable del cambio\s+([^\s]+)\s+Fecha del cambio\s+([\d/]+)/
+    );
+    result.registroCambios = changesMatch
+      ? [
+          {
+            version: changesMatch[1].trim(),
+            causaDelCambio: changesMatch[2].trim(),
+            responsableDelCambio: changesMatch[3].trim(),
+            fechaDelCambio: changesMatch[4].trim(),
+          },
+        ]
+      : [];
+
+    // Extraer tareas y cálculos
+    const backendTasksMatch = pdfText.match(
+      /Tarea\s+Microservicio\s+Horas\s+([\s\S]+?)Total Backend\s+([\d]+\s+Hs.)/
+    );
+    result.resumenTareasCalculos = backendTasksMatch
+      ? {
+          tareas: backendTasksMatch[1]
+            .split(' Hs.')
+            .slice(0, -1)
+            .map((line) => {
+              const taskMatch = line
+                .trim()
+                .match(/(.+)\s+([\w]+)\s+([\d]+\s+Hs.)/);
+              return taskMatch
+                ? {
+                    tarea: taskMatch[1].trim(),
+                    microservicio: taskMatch[2].trim(),
+                    horas: taskMatch[3].trim(),
+                  }
+                : null;
+            })
+            .filter((task) => task !== null),
+          totalBackend: backendTasksMatch[2].trim(),
+        }
+      : null;
+
+    // Ajuste para capturar la sección de Análisis
+    const analisisSectionMatch = pdfText.match(
+      /Análisis\s+Backend\s+Frontend\s+Total\s+([\s\S]+?)Total\s+Análisis:\s+(\d+\s+Hs.)/
+    );
+
+    console.log('analisisSectionMatch:', analisisSectionMatch); // Verificar si ahora se captura
+
+    if (analisisSectionMatch) {
+      // Dividir la línea en análisis individuales
+      const analisisItems =
+        analisisSectionMatch[1].match(
+          /.+?\s+\d+\s+Hs.\s+\d+\s+Hs.\s+\d+\s+Hs./g
+        ) || [];
+
+      console.log('analisisItems:', analisisItems); // Verificar las líneas de análisis
+
+      result.calculoAnalisis = {
+        analisis: analisisItems
+          .map((item) => {
+            const itemMatch = item.match(
+              /(.+?)\s+(\d+\s+Hs.)\s+(\d+\s+Hs.)\s+(\d+\s+Hs.)/
+            );
+            return itemMatch
+              ? {
+                  tipo: itemMatch[1].trim(),
+                  backend: itemMatch[2].trim(),
+                  frontend: itemMatch[3].trim(),
+                  total: itemMatch[4].trim(),
+                }
+              : null;
+          })
+          .filter((item) => item !== null),
+        totalAnalisis: analisisSectionMatch[2].trim(),
+      };
+    } else {
+      result.calculoAnalisis = null;
+    }
+
+    // Extraer desarrollo / análisis
+    const desarrolloMatch = pdfText.match(
+      /Desarrollo\s+\/\s+Análisis\s+Backend\s+Frontend\s+Total\s+([\s\S]+?)Total Estimación\s+([\d]+\s+Hs.)/
+    );
+    result.desarrolloAnalisis = desarrolloMatch
+      ? {
+          desarrollo: desarrolloMatch[1]
+            .match(/.+?\s+\d+\s+Hs.\s+\d+\s+Hs.\s+\d+\s+Hs./g)
+            ?.map((line) => {
+              const desarrolloTaskMatch = line.match(
+                /(.+?)\s+(\d+\s+Hs.)\s+(\d+\s+Hs.)\s+(\d+\s+Hs.)/
+              );
+              return desarrolloTaskMatch
+                ? {
+                    tipo: desarrolloTaskMatch[1].trim(),
+                    backend: desarrolloTaskMatch[2].trim(),
+                    frontend: desarrolloTaskMatch[3].trim(),
+                    total: desarrolloTaskMatch[4].trim(),
+                  }
+                : null;
+            })
+            .filter((desarrollo) => desarrollo !== null),
+          totalEstimacion: desarrolloMatch[2].trim(),
+        }
+      : null;
+
+    return result;
   }
 
   onDragOver(event: DragEvent) {
