@@ -8,1599 +8,1642 @@
     "
   >
     <button
-      (click)="openFormModal()"
-      class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-2"
+      (click)="openUploadModal()"
+      class="bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white font-bold py-2 px-4 rounded-full shadow-lg transform transition-transform hover:scale-105 mt-2"
     >
-      Rellenar Formulario
+      <i class="fa-solid fa-upload mr-2"></i>Cargar Documento
     </button>
     <button
+      (click)="openFormModal()"
+      class="bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white font-bold py-2 px-4 rounded-full shadow-lg transform transition-transform hover:scale-105 mt-2"
+    >
+      <i class="fa-solid fa-edit mr-2"></i>Rellenar Formulario
+    </button>
+
+    <button
       (click)="validateAndDownloadPDF()"
-      class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-2"
+      class="bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-bold py-2 px-4 rounded-full shadow-lg transform transition-transform hover:scale-105 mt-2"
       style="margin-right: 1rem"
     >
-      Descargar PDF
+      <i class="fa-solid fa-download mr-2"></i>Descargar PDF
     </button>
   </div>
 
   <div
-    *ngIf="showWarningModal"
-    class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
-    style="z-index: 999999999999"
+    *ngIf="showUploadModal"
+    class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50"
+    (dragover)="onDragOver($event)"
+    (dragleave)="onDragLeave($event)"
+    (drop)="onDrop($event)"
+    [ngClass]="{ dragging: isDragging }"
   >
-    <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-      <div class="flex items-center mb-4">
-        <div class="bg-red-500 rounded-full pr-2 pt-1 pb-1 pl-2">
-          <i class="fa-solid fa-exclamation-triangle text-white text-2xl"></i>
-        </div>
-        <h2 class="text-xl font-bold text-gray-800 ml-4">Advertencia</h2>
-      </div>
-      <p
-        class="text-gray-700 mb-6"
-        *ngIf="
-          !formData.tituloDocumento ||
-          !formData.proyecto ||
-          !formData.desarrolladores[0]
-        "
-      >
-        <i class="fa-solid fa-circle text-red-500 mr-2 fa-xs"></i>
-        Debe rellenar el formulario para poder descargar el PDF.
+    <div
+      class="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg transition-transform transform"
+      [ngClass]="{ 'scale-105 border-4 border-blue-500': isDragging }"
+    >
+      <h2 class="text-2xl font-bold text-gray-800 mb-4">Subir Documento</h2>
+      <p class="text-gray-600">
+        Arrastra y suelta tu archivo aquí, o haz clic para seleccionarlo.
       </p>
-      <p
-        class="text-gray-700 mb-6"
-        *ngIf="
-          !desarrolloHoras &&
-          !frontendHoras &&
-          tareas.length === 0 &&
-          tareasFrontend.length === 0
-        "
+      <div
+        class="mt-4 p-6 border-2 border-dashed border-gray-300 rounded-lg text-center"
       >
-        <i class="fa-solid fa-circle text-red-500 mr-2 fa-xs"></i>
-        Debe ingresar horas de desarrollo para poder descargar el PDF.
-      </p>
-      <p
-        class="text-gray-700 mb-6"
-        *ngIf="
-          (desarrolloHoras &&
-            !formData.microservicioBackend &&
-            microservicesBackend.length === 0) ||
-          (frontendHoras &&
-            !formData.microservicioFrontend &&
-            microservicesFrontend.length === 0)
-        "
-      >
-        <i class="fa-solid fa-circle text-red-500 mr-2 fa-xs"></i>
-        Debe rellenar los microservicios de la estimación en el formulario.
-      </p>
-
-      <div class="flex justify-end">
-        <button
-          (click)="closeWarningModal()"
-          class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-full"
+        <input
+          type="file"
+          id="file-upload"
+          (change)="handleFileInput($event)"
+          class="hidden"
+        />
+        <label
+          for="file-upload"
+          class="cursor-pointer text-blue-500 hover:text-blue-700"
+          >Selecciona un archivo</label
         >
-          Cerrar
+        <p *ngIf="uploadedFile" class="mt-2 text-green-500">
+          {{ uploadedFile.name }}
+        </p>
+      </div>
+      <div class="flex justify-end space-x-4 mt-6">
+        <button
+          class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-full"
+          (click)="closeUploadModal()"
+        >
+          Cancelar
+        </button>
+        <button
+          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full"
+          [disabled]="!uploadedFile"
+          (click)="uploadFile()"
+          [ngClass]="{
+            'cursor-not-allowed opacity-50': !uploadedFile,
+            'cursor-pointer opacity-100': uploadedFile
+          }"
+        >
+          Subir
         </button>
       </div>
     </div>
   </div>
+</div>
 
-  <div
-    *ngIf="isFormModalOpen"
-    class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center"
-    style="z-index: 999999999999"
-  >
-    <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-2xl font-bold text-gray-800">Rellenar Formulario</h2>
-        <button
-          (click)="closeFormModal()"
-          class="text-gray-600 hover:text-gray-800"
+<div
+  *ngIf="showWarningModal"
+  class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
+  style="z-index: 999999999999"
+>
+  <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+    <div class="flex items-center mb-4">
+      <div class="bg-red-500 rounded-full pr-2 pt-1 pb-1 pl-2">
+        <i class="fa-solid fa-exclamation-triangle text-white text-2xl"></i>
+      </div>
+      <h2 class="text-xl font-bold text-gray-800 ml-4">Advertencia</h2>
+    </div>
+    <p
+      class="text-gray-700 mb-6"
+      *ngIf="
+        !formData.tituloDocumento ||
+        !formData.proyecto ||
+        !formData.desarrolladores[0]
+      "
+    >
+      <i class="fa-solid fa-circle text-red-500 mr-2 fa-xs"></i>
+      Debe rellenar el formulario para poder descargar el PDF.
+    </p>
+    <p
+      class="text-gray-700 mb-6"
+      *ngIf="
+        !desarrolloHoras &&
+        !frontendHoras &&
+        tareas.length === 0 &&
+        tareasFrontend.length === 0
+      "
+    >
+      <i class="fa-solid fa-circle text-red-500 mr-2 fa-xs"></i>
+      Debe ingresar horas de desarrollo para poder descargar el PDF.
+    </p>
+    <p
+      class="text-gray-700 mb-6"
+      *ngIf="
+        (desarrolloHoras &&
+          !formData.microservicioBackend &&
+          microservicesBackend.length === 0) ||
+        (frontendHoras &&
+          !formData.microservicioFrontend &&
+          microservicesFrontend.length === 0)
+      "
+    >
+      <i class="fa-solid fa-circle text-red-500 mr-2 fa-xs"></i>
+      Debe rellenar los microservicios de la estimación en el formulario.
+    </p>
+
+    <div class="flex justify-end">
+      <button
+        (click)="closeWarningModal()"
+        class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-full"
+      >
+        Cerrar
+      </button>
+    </div>
+  </div>
+</div>
+
+<div
+  *ngIf="isFormModalOpen"
+  class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center"
+  style="z-index: 999999999999"
+>
+  <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-2xl font-bold text-gray-800">Rellenar Formulario</h2>
+      <button
+        (click)="closeFormModal()"
+        class="text-gray-600 hover:text-gray-800"
+      >
+        <i class="fa-solid fa-times"></i>
+      </button>
+    </div>
+
+    <form (ngSubmit)="submitForm()">
+      <!-- Título Documento -->
+      <div class="mb-4">
+        <label
+          for="tituloDocumento"
+          class="block text-sm font-medium text-gray-700"
         >
-          <i class="fa-solid fa-times"></i>
+          Título Documento *
+        </label>
+        <input
+          type="text"
+          id="tituloDocumento"
+          [(ngModel)]="formData.tituloDocumento"
+          name="tituloDocumento"
+          [ngClass]="{
+            'border-red-500': !formData.tituloDocumento && formSubmitted
+          }"
+          class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+          required
+        />
+        <div
+          *ngIf="!formData.tituloDocumento && formSubmitted"
+          class="text-red-500 text-sm mt-1"
+        >
+          El campo "Título Documento" es de carácter obligatorio.
+        </div>
+      </div>
+
+      <!-- Proyecto -->
+      <div class="mb-4">
+        <label for="proyecto" class="block text-sm font-medium text-gray-700">
+          Proyecto *
+        </label>
+        <input
+          type="text"
+          id="proyecto"
+          [(ngModel)]="formData.proyecto"
+          name="proyecto"
+          [ngClass]="{
+            'border-red-500': !formData.proyecto && formSubmitted
+          }"
+          class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+          required
+        />
+        <div
+          *ngIf="!formData.proyecto && formSubmitted"
+          class="text-red-500 text-sm mt-1"
+        >
+          El campo "Proyecto" es de carácter obligatorio.
+        </div>
+      </div>
+
+      <!-- Nombre Desarrollador -->
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700"
+          >Nombre Desarrollador *</label
+        >
+        <div class="space-y-2">
+          <div
+            *ngFor="
+              let developer of formData.desarrolladores;
+              let i = index;
+              trackBy: trackByIndex
+            "
+            class="flex flex-col"
+          >
+            <div class="flex items-center">
+              <input
+                type="text"
+                [(ngModel)]="formData.desarrolladores[i]"
+                name="desarrollador{{ i }}"
+                [ngClass]="{
+                  'border-red-500':
+                    !formData.desarrolladores[i] && formSubmitted
+                }"
+                class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                required
+              />
+              <button
+                *ngIf="i === 0"
+                type="button"
+                (click)="addDeveloper()"
+                class="ml-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded"
+              >
+                <i class="fa-solid fa-plus"></i>
+              </button>
+              <button
+                *ngIf="i > 0"
+                type="button"
+                (click)="removeDeveloper(i)"
+                class="ml-2 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-3 rounded"
+              >
+                <i class="fa-solid fa-times"></i>
+              </button>
+            </div>
+            <div
+              *ngIf="!developer && formSubmitted"
+              class="text-red-500 text-sm mt-1"
+            >
+              El campo "Nombre Desarrollador" es de carácter obligatorio.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Microservicio Backend -->
+      <div
+        class="mb-4"
+        *ngIf="
+          microservicesBackend.length === 0 &&
+          (desarrolloHoras || tareas.length !== 0)
+        "
+      >
+        <label
+          for="microservicioBackend"
+          class="block text-sm font-medium text-gray-700"
+        >
+          Microservicio Backend *
+        </label>
+        <input
+          type="text"
+          id="microservicioBackend"
+          [(ngModel)]="formData.microservicioBackend"
+          name="microservicioBackend"
+          [ngClass]="{
+            'border-red-500': !formData.microservicioBackend && formSubmitted
+          }"
+          class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+          required
+        />
+        <div
+          *ngIf="!formData.microservicioBackend && formSubmitted"
+          class="text-red-500 text-sm mt-1"
+        >
+          El campo "Microservicio Backend" es de carácter obligatorio.
+        </div>
+      </div>
+
+      <!-- Microservicio Frontend -->
+      <div
+        class="mb-4"
+        *ngIf="
+          microservicesFrontend.length === 0 &&
+          (frontendHoras || tareasFrontend.length !== 0)
+        "
+      >
+        <label
+          for="microservicioFrontend"
+          class="block text-sm font-medium text-gray-700"
+        >
+          Microservicio Frontend *
+        </label>
+        <input
+          type="text"
+          id="microservicioFrontend"
+          [(ngModel)]="formData.microservicioFrontend"
+          name="microservicioFrontend"
+          [ngClass]="{
+            'border-red-500': !formData.microservicioFrontend && formSubmitted
+          }"
+          class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+          required
+        />
+        <div
+          *ngIf="!formData.microservicioFrontend && formSubmitted"
+          class="text-red-500 text-sm mt-1"
+        >
+          El campo "Microservicio Frontend" es de carácter obligatorio.
+        </div>
+      </div>
+
+      <!-- Descripción -->
+      <div class="mb-4">
+        <label
+          for="descripcion"
+          class="block text-sm font-medium text-gray-700"
+        >
+          Descripción
+        </label>
+        <textarea
+          id="descripcion"
+          [(ngModel)]="formData.descripcion"
+          name="descripcion"
+          rows="3"
+          class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+          placeholder="Descripción opcional"
+        ></textarea>
+      </div>
+
+      <!-- Botones de acción -->
+      <div class="flex justify-end space-x-4">
+        <button
+          type="button"
+          (click)="closeFormModal()"
+          class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        >
+          Guardar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div
+  class="min-h-screen flex flex-col justify-center items-center bg-gray-100 p-4"
+>
+  <div
+    class="flex flex-col md:flex-row items-start w-full max-w-7xl transition-all duration-500 h-full"
+  >
+    <div
+      class="bg-white shadow-md rounded-lg p-6 max-w-lg w-full transition-all duration-300 flex-grow"
+      [ngClass]="{
+        'md:w-1/2': showTareasCard || showFrontendTareasCard,
+        'mx-auto': !showTareasCard && !showFrontendTareasCard
+      }"
+    >
+      <div class="flex items-center justify-between mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">
+          Estimador de Desarrollos
+        </h1>
+
+        <div class="flex items-center">
+          <input
+            type="checkbox"
+            id="frontendSwitch"
+            [(ngModel)]="showFrontend"
+            (change)="handleFrontendSwitch()"
+            class="hidden"
+          />
+          <label for="frontendSwitch" class="flex items-center cursor-pointer">
+            <div class="relative">
+              <div class="block bg-gray-300 w-10 h-6 rounded-full"></div>
+              <div
+                class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition"
+              ></div>
+            </div>
+          </label>
+          <i
+            class="fa-solid fa-info-circle ml-2"
+            title="Este switch activa las horas para desarrollo frontend."
+          ></i>
+        </div>
+      </div>
+      <div class="flex items-center mb-6">
+        <label
+          for="desarrollo"
+          class="block text-lg font-medium text-gray-700 mb-2"
+          >Backend</label
+        >
+        <input
+          type="number"
+          id="desarrollo"
+          [(ngModel)]="desarrolloHoras"
+          (input)="calcularEstimacion()"
+          class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ml-4"
+          placeholder="Ingrese las horas de desarrollo"
+          [disabled]="showTareasCard"
+        />
+        <button
+          (click)="toggleTareasCard()"
+          class="bg-gray-300 p-2 ml-4 rounded shadow flex items-center"
+        >
+          <i *ngIf="!showTareasCard" class="fa-solid fa-arrow-right"></i>
+          <i *ngIf="showTareasCard" class="fa-solid fa-arrow-left"></i>
+        </button>
+      </div>
+      <div *ngIf="showFrontend" class="flex items-center mb-6">
+        <label
+          for="frontend"
+          class="block text-lg font-medium text-gray-700 mb-2"
+          >Frontend</label
+        >
+        <input
+          type="number"
+          id="frontend"
+          [(ngModel)]="frontendHoras"
+          (input)="calcularEstimacion()"
+          class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ml-4"
+          placeholder="Ingrese las horas de desarrollo"
+          [disabled]="showFrontendTareasCard"
+        />
+        <button
+          (click)="toggleFrontendTareasCard()"
+          class="bg-gray-300 p-2 ml-4 rounded shadow flex items-center"
+        >
+          <i
+            *ngIf="!showFrontendTareasCard"
+            class="fa-solid fa-arrow-right"
+          ></i>
+          <i *ngIf="showFrontendTareasCard" class="fa-solid fa-arrow-left"></i>
         </button>
       </div>
 
-      <form (ngSubmit)="submitForm()">
-        <!-- Título Documento -->
-        <div class="mb-4">
+      <div
+        *ngIf="
+          showEstimaciones &&
+          (tareas.length > 0 ||
+            tareasFrontend.length > 0 ||
+            desarrolloHoras ||
+            frontendHoras)
+        "
+        class="bg-gray-50 p-4 rounded-lg overflow-hidden"
+      >
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-2xl font-semibold text-gray-700">Cálculo:</h2>
+          <i
+            class="fa-solid fa-cog cursor-pointer text-gray-700"
+            title="Configurar cálculos"
+            (click)="toggleConfiguracion()"
+          ></i>
+        </div>
+
+        <!-- Encabezado de columnas para H.Back, H.Front y Total -->
+        <div class="flex justify-between mb-2">
+          <span class="flex-grow text-left"></span>
+          <!-- Espacio para alinear los títulos -->
+          <span class="w-20 text-right font-bold">H.Back</span>
+          <span class="w-20 text-right font-bold">H.Front</span>
+          <span class="w-20 text-right font-bold">Total</span>
+        </div>
+
+        <!-- Filas con los títulos y valores calculados -->
+        <ul class="space-y-2 mb-4">
+          <li class="flex justify-between items-center">
+            <span class="flex-grow text-left">Análisis Funcional:</span>
+            <span class="w-20 text-right"
+              >{{ estimaciones?.analisisFuncionalBack }} Hs.</span
+            >
+            <span class="w-20 text-right"
+              >{{ estimaciones?.analisisFuncionalFront }} Hs.</span
+            >
+            <span class="w-20 text-right"
+              >{{ estimaciones?.analisisFuncionalTotal }} Hs.</span
+            >
+          </li>
+          <li class="flex justify-between items-center">
+            <span class="flex-grow text-left">Análisis Técnico:</span>
+            <span class="w-20 text-right"
+              >{{ estimaciones?.analisisTecnicoBack }} Hs.</span
+            >
+            <span class="w-20 text-right"
+              >{{ estimaciones?.analisisTecnicoFront }} Hs.</span
+            >
+            <span class="w-20 text-right"
+              >{{ estimaciones?.analisisTecnicoTotal }} Hs.</span
+            >
+          </li>
+          <li class="flex justify-between items-center">
+            <span class="flex-grow text-left">Pruebas Unitarias:</span>
+            <span class="w-20 text-right"
+              >{{ estimaciones?.pruebasUnitariasBack }} Hs.</span
+            >
+            <span class="w-20 text-right"
+              >{{ estimaciones?.pruebasUnitariasFront }} Hs.</span
+            >
+            <span class="w-20 text-right"
+              >{{ estimaciones?.pruebasUnitariasTotal }} Hs.</span
+            >
+          </li>
+          <li class="flex justify-between items-center">
+            <span class="flex-grow text-left">Pruebas de Integración:</span>
+            <span class="w-20 text-right"
+              >{{ estimaciones?.pruebasIntegracionBack }} Hs.</span
+            >
+            <span class="w-20 text-right"
+              >{{ estimaciones?.pruebasIntegracionFront }} Hs.</span
+            >
+            <span class="w-20 text-right"
+              >{{ estimaciones?.pruebasIntegracionTotal }} Hs.</span
+            >
+          </li>
+          <li class="flex justify-between items-center">
+            <span class="flex-grow text-left">Implementación y Soporte:</span>
+            <span class="w-20 text-right"
+              >{{ estimaciones?.implementacionYSoporteBack }} Hs.</span
+            >
+            <span class="w-20 text-right"
+              >{{ estimaciones?.implementacionYSoporteFront }} Hs.</span
+            >
+            <span class="w-20 text-right"
+              >{{ estimaciones?.implementacionYSoporteTotal }} Hs.</span
+            >
+          </li>
+          <li class="flex justify-between items-center">
+            <span class="flex-grow text-left">Gestión:</span>
+            <span class="w-20 text-right"
+              >{{ estimaciones?.gestionBack }} Hs.</span
+            >
+            <span class="w-20 text-right"
+              >{{ estimaciones?.gestionFront }} Hs.</span
+            >
+            <span class="w-20 text-right"
+              >{{ estimaciones?.gestionTotal }} Hs.</span
+            >
+          </li>
+          <li class="flex justify-between items-center">
+            <span class="flex-grow text-left">Documentación:</span>
+            <span class="w-20 text-right"
+              >{{ estimaciones?.documentacionBack }} Hs.</span
+            >
+            <span class="w-20 text-right"
+              >{{ estimaciones?.documentacionFront }} Hs.</span
+            >
+            <span class="w-20 text-right"
+              >{{ estimaciones?.documentacionTotal }} Hs.</span
+            >
+          </li>
+          <li class="flex justify-between items-center">
+            <span class="flex-grow text-left">Desarrollo:</span>
+            <span class="w-20 text-right"
+              >{{ estimaciones?.desarrolloBackend }} Hs.</span
+            >
+            <span class="w-20 text-right"
+              >{{ estimaciones?.desarrolloFront }} Hs.</span
+            >
+            <span class="w-20 text-right"
+              >{{ estimaciones?.desarrolloTotal }} Hs.</span
+            >
+          </li>
+        </ul>
+
+        <hr class="my-4" />
+        <div class="flex justify-between font-bold text-lg">
+          <span>Total:</span>
+          <span>{{ totalHoras }} Horas</span>
+        </div>
+        <div class="canva-style mt-6">
+          <canvas
+            baseChart
+            [data]="pieChartData"
+            [labels]="pieChartLabels"
+            [type]="pieChartType"
+          ></canvas>
+        </div>
+      </div>
+      <div class="flex justify-end items-center mt-4">
+        <a href="https://github.com/JoaquimColacilli" target="_blank">
+          <span class="text-gray-600 mr-2">Joaquim Colacilli</span>
+
+          <i class="fa-brands fa-github text-gray-600"></i>
+        </a>
+      </div>
+    </div>
+
+    <div
+      *ngIf="showConfiguracion"
+      class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
+      style="z-index: 9999999999999999999999999999"
+    >
+      <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+        <div class="flex justify-between items-center mb-4">
+          <div class="tabs">
+            <button
+              [ngClass]="{ 'active-tab': activeTab === 'backend' }"
+              (click)="activeTab = 'backend'"
+              class="tab-button"
+            >
+              Configuración Backend
+            </button>
+            <button
+              [ngClass]="{ 'active-tab': activeTab === 'frontend' }"
+              (click)="activeTab = 'frontend'"
+              class="tab-button"
+            >
+              Configuración Frontend
+            </button>
+          </div>
+          <button class="text-gray-700" (click)="toggleConfiguracion()">
+            <i class="fa-solid fa-times"></i>
+          </button>
+        </div>
+
+        <ul class="space-y-4">
+          <ng-container
+            *ngIf="activeTab === 'backend'; else frontendConfiguracion"
+          >
+            <ng-container *ngFor="let campo of camposEstimacionBackend">
+              <li class="flex flex-col">
+                <div class="flex justify-between items-center mb-2">
+                  <span>{{ campo.label }}:</span>
+                  <div class="flex items-center ml-4">
+                    <label class="mr-2">%</label>
+                    <input
+                      type="radio"
+                      name="{{ campo.key }}"
+                      value="porcentaje"
+                      [(ngModel)]="campo.modo"
+                      class="mr-4"
+                      (change)="updateEstimaciones()"
+                    />
+                    <label class="mr-2">Horas</label>
+                    <input
+                      type="radio"
+                      name="{{ campo.key }}"
+                      value="horas"
+                      [(ngModel)]="campo.modo"
+                      (change)="updateEstimaciones()"
+                    />
+                  </div>
+                </div>
+                <div class="flex justify-between items-center">
+                  <div class="flex items-center">
+                    <input
+                      type="number"
+                      class="w-20 p-1 border border-gray-300 rounded-md"
+                      [(ngModel)]="campo.porcentaje"
+                      *ngIf="campo.modo === 'porcentaje'"
+                      (input)="updateEstimaciones()"
+                      [max]="100"
+                      min="0"
+                    />
+                    <span *ngIf="campo.modo === 'porcentaje'" class="ml-1"
+                      >%</span
+                    >
+                    <input
+                      type="number"
+                      class="w-20 p-1 border border-gray-300 rounded-md"
+                      [(ngModel)]="campo.horas"
+                      *ngIf="campo.modo === 'horas'"
+                      (input)="updateEstimaciones()"
+                      min="0"
+                    />
+                  </div>
+                </div>
+              </li>
+            </ng-container>
+          </ng-container>
+
+          <ng-template #frontendConfiguracion>
+            <ng-container *ngFor="let campo of camposEstimacionFrontend">
+              <li class="flex flex-col">
+                <div class="flex justify-between items-center mb-2">
+                  <span>{{ campo.label }}:</span>
+                  <div class="flex items-center ml-4">
+                    <label class="mr-2">%</label>
+                    <input
+                      type="radio"
+                      name="{{ campo.key }}"
+                      value="porcentaje"
+                      [(ngModel)]="campo.modo"
+                      class="mr-4"
+                      (change)="updateEstimaciones()"
+                    />
+                    <label class="mr-2">Horas</label>
+                    <input
+                      type="radio"
+                      name="{{ campo.key }}"
+                      value="horas"
+                      [(ngModel)]="campo.modo"
+                      (change)="updateEstimaciones()"
+                    />
+                  </div>
+                </div>
+                <div class="flex justify-between items-center">
+                  <div class="flex items-center">
+                    <input
+                      type="number"
+                      class="w-20 p-1 border border-gray-300 rounded-md"
+                      [(ngModel)]="campo.porcentaje"
+                      *ngIf="campo.modo === 'porcentaje'"
+                      (input)="updateEstimaciones()"
+                      [max]="100"
+                      min="0"
+                    />
+                    <span *ngIf="campo.modo === 'porcentaje'" class="ml-1"
+                      >%</span
+                    >
+                    <input
+                      type="number"
+                      class="w-20 p-1 border border-gray-300 rounded-md"
+                      [(ngModel)]="campo.horas"
+                      *ngIf="campo.modo === 'horas'"
+                      (input)="updateEstimaciones()"
+                      min="0"
+                    />
+                  </div>
+                </div>
+              </li>
+            </ng-container>
+          </ng-template>
+        </ul>
+
+        <div class="flex justify-between mt-4">
+          <button
+            class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+            (click)="restablecerValores()"
+          >
+            Restablecer valores
+          </button>
+          <button
+            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            (click)="guardarConfiguracion()"
+            [disabled]="!isValidConfiguration()"
+            [ngClass]="{
+              'bg-gray-400 cursor-not-allowed': !isValidConfiguration(),
+              'bg-blue-500 hover:bg-blue-700 cursor-pointer':
+                isValidConfiguration()
+            }"
+          >
+            Guardar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      *ngIf="showTareasCard"
+      class="bg-white shadow-md rounded-lg p-6 w-full md:w-1/2 ml-6 transition-all h-full flex flex-col relative"
+    >
+      <div class="absolute top-0 right-0 mt-4 mr-4 flex items-center">
+        <i
+          class="fa-solid fa-cog cursor-pointer text-gray-700"
+          title="Este botón permitirá configurar múltiples microservicios para Backend."
+          (click)="toggleMicroservicesModal('backend')"
+        ></i>
+      </div>
+
+      <h2 class="text-2xl font-semibold mb-2 text-gray-700">
+        Agregar Tareas Backend
+      </h2>
+
+      <div class="mb-2 flex items-center">
+        <div
+          [ngClass]="{
+            'w-2/3': microservicesBackend.length > 0,
+            'w-full': microservicesBackend.length === 0
+          }"
+          class="mr-4"
+        >
           <label
-            for="tituloDocumento"
-            class="block text-sm font-medium text-gray-700"
+            for="tareaNombre"
+            class="block text-lg font-medium text-gray-700"
+            >Tarea</label
           >
-            Título Documento *
-          </label>
           <input
             type="text"
-            id="tituloDocumento"
-            [(ngModel)]="formData.tituloDocumento"
-            name="tituloDocumento"
-            [ngClass]="{
-              'border-red-500': !formData.tituloDocumento && formSubmitted
-            }"
+            id="tareaNombre"
+            [(ngModel)]="tareaNombre"
             class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            required
+            placeholder="Ingrese el nombre de la tarea"
           />
-          <div
-            *ngIf="!formData.tituloDocumento && formSubmitted"
-            class="text-red-500 text-sm mt-1"
-          >
-            El campo "Título Documento" es de carácter obligatorio.
-          </div>
         </div>
+        <div class="w-1/3 mr-4" *ngIf="microservicesBackend.length > 0">
+          <label
+            for="microserviceSelect"
+            class="block text-lg font-medium text-gray-700"
+            >Microservicio</label
+          >
+          <select
+            id="microserviceSelect"
+            [(ngModel)]="selectedMicroserviceBackend"
+            class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+          >
+            <option value="">Seleccione un microservicio</option>
+            <option *ngFor="let ms of microservicesBackend" [value]="ms">
+              {{ ms }}
+            </option>
+          </select>
+        </div>
+        <div class="w-1/3">
+          <label
+            for="tareaHoras"
+            class="block text-lg font-medium text-gray-700"
+            >Horas</label
+          >
+          <input
+            type="number"
+            id="tareaHoras"
+            [(ngModel)]="tareaHoras"
+            class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+            placeholder="Horas"
+          />
+        </div>
+      </div>
+      <button
+        (click)="agregarTarea('backend')"
+        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+      >
+        Agregar
+      </button>
+      <ul class="flex-grow overflow-y-auto">
+        <li
+          *ngFor="let tarea of tareas; let i = index"
+          class="flex justify-between p-2 border-b border-gray-300 items-center"
+        >
+          <div class="w-1/3 mr-4">
+            <span
+              class="block break-words whitespace-normal"
+              style="overflow-y: auto; max-height: 128px"
+              >{{ tarea.nombre }}</span
+            >
+          </div>
+          <div class="w-1/3 mr-4" *ngIf="tarea['microservice']">
+            <span
+              class="block break-words whitespace-normal"
+              style="overflow-y: auto; max-height: 128px"
+              >{{ tarea["microservice"] }}</span
+            >
+          </div>
+          <div class="w-1/3 text-center">
+            <span>{{ tarea.horas }} Hs.</span>
+          </div>
+          <div class="flex items-center">
+            <button (click)="editarTarea('backend', i)">
+              <i class="fa fa-edit mr-2"></i>
+            </button>
+            <button (click)="eliminarTarea('backend', i)">
+              <i class="fa fa-trash eliminar-button"></i>
+            </button>
+          </div>
+        </li>
+      </ul>
+    </div>
 
-        <!-- Proyecto -->
-        <div class="mb-4">
-          <label for="proyecto" class="block text-sm font-medium text-gray-700">
-            Proyecto *
-          </label>
+    <div
+      *ngIf="showFrontendTareasCard"
+      class="bg-white shadow-md rounded-lg p-6 w-full md:w-1/2 ml-6 transition-all h-full flex flex-col relative"
+    >
+      <div class="absolute top-0 right-0 mt-4 mr-4 flex items-center">
+        <i
+          class="fa-solid fa-cog cursor-pointer text-gray-700"
+          title="Este botón permitirá configurar múltiples microservicios para Frontend."
+          (click)="toggleMicroservicesModal('frontend')"
+        ></i>
+      </div>
+
+      <h2 class="text-2xl font-semibold mb-2 text-gray-700">
+        Agregar Tareas Frontend
+      </h2>
+
+      <div class="mb-2 flex items-center">
+        <div
+          [ngClass]="{
+            'w-2/3': microservicesFrontend.length > 0,
+            'w-full': microservicesFrontend.length === 0
+          }"
+          class="mr-4"
+        >
+          <label
+            for="tareaNombreFrontend"
+            class="block text-lg font-medium text-gray-700"
+            >Tarea</label
+          >
           <input
             type="text"
-            id="proyecto"
-            [(ngModel)]="formData.proyecto"
-            name="proyecto"
-            [ngClass]="{
-              'border-red-500': !formData.proyecto && formSubmitted
-            }"
+            id="tareaNombreFrontend"
+            [(ngModel)]="tareaNombreFrontend"
             class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            required
+            placeholder="Ingrese el nombre de la tarea"
           />
-          <div
-            *ngIf="!formData.proyecto && formSubmitted"
-            class="text-red-500 text-sm mt-1"
+        </div>
+        <div class="w-1/3 mr-4" *ngIf="microservicesFrontend.length > 0">
+          <label
+            for="microserviceSelectFrontend"
+            class="block text-lg font-medium text-gray-700"
+            >Microservicio</label
           >
-            El campo "Proyecto" es de carácter obligatorio.
-          </div>
+          <select
+            id="microserviceSelectFrontend"
+            [(ngModel)]="selectedMicroserviceFrontend"
+            class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+          >
+            <option value="">Seleccione un microservicio</option>
+            <option *ngFor="let ms of microservicesFrontend" [value]="ms">
+              {{ ms }}
+            </option>
+          </select>
         </div>
 
-        <!-- Nombre Desarrollador -->
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700"
-            >Nombre Desarrollador *</label
+        <div class="w-1/3">
+          <label
+            for="tareaHorasFrontend"
+            class="block text-lg font-medium text-gray-700"
+            >Horas</label
           >
+          <input
+            type="number"
+            id="tareaHorasFrontend"
+            [(ngModel)]="tareaHorasFrontend"
+            class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+            placeholder="Horas"
+          />
+        </div>
+      </div>
+      <button
+        (click)="agregarTarea('frontend')"
+        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+      >
+        Agregar
+      </button>
+      <ul class="flex-grow overflow-y-auto">
+        <li
+          *ngFor="let tarea of tareasFrontend; let i = index"
+          class="flex justify-between p-2 border-b border-gray-300 items-center"
+        >
+          <div class="w-1/3 mr-4">
+            <span
+              class="block break-words whitespace-normal"
+              style="overflow-y: auto; max-height: 128px"
+              >{{ tarea.nombre }}</span
+            >
+          </div>
+          <div class="w-1/3 mr-4" *ngIf="tarea['microservice']">
+            <span
+              class="block break-words whitespace-normal"
+              style="overflow-y: auto; max-height: 128px"
+              >{{ tarea["microservice"] }}</span
+            >
+          </div>
+          <div class="w-1/3 text-center">
+            <span>{{ tarea.horas }} Hs.</span>
+          </div>
+          <div class="flex items-center">
+            <button (click)="editarTarea('frontend', i)">
+              <i class="fa fa-edit mr-2"></i>
+            </button>
+            <button (click)="eliminarTarea('frontend', i)">
+              <i class="fa fa-trash eliminar-button"></i>
+            </button>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div
+      *ngIf="showMicroservicesModalBackend"
+      class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
+    >
+      <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+        <h2 class="text-xl font-bold mb-4 text-gray-800">
+          Configuración de Microservicios Backend
+        </h2>
+        <div class="mb-4">
           <div class="space-y-2">
             <div
               *ngFor="
-                let developer of formData.desarrolladores;
+                let microservice of microservicesBackend;
                 let i = index;
                 trackBy: trackByIndex
               "
               class="flex flex-col"
             >
+              <!-- Mensaje de validación para los dos primeros inputs -->
+              <div
+                *ngIf="
+                  formSubmitted &&
+                  i < 2 &&
+                  (!microservicesBackend[0] || !microservicesBackend[1])
+                "
+                class="text-red-500 text-sm mb-1"
+              >
+                Deben haber al menos dos microservicios ingresados.
+              </div>
+              <div
+                *ngIf="formSubmitted && i >= 2 && !microservice"
+                class="text-red-500 text-sm mb-1"
+              >
+                Este campo no puede estar vacío.
+              </div>
               <div class="flex items-center">
                 <input
                   type="text"
-                  [(ngModel)]="formData.desarrolladores[i]"
-                  name="desarrollador{{ i }}"
-                  [ngClass]="{
-                    'border-red-500':
-                      !formData.desarrolladores[i] && formSubmitted
-                  }"
+                  [(ngModel)]="microservicesBackend[i]"
+                  name="microserviceBackend{{ i }}"
                   class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                   required
+                  placeholder="Nombre microservicio"
                 />
                 <button
-                  *ngIf="i === 0"
+                  *ngIf="i >= 2"
                   type="button"
-                  (click)="addDeveloper()"
-                  class="ml-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded"
-                >
-                  <i class="fa-solid fa-plus"></i>
-                </button>
-                <button
-                  *ngIf="i > 0"
-                  type="button"
-                  (click)="removeDeveloper(i)"
-                  class="ml-2 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-3 rounded"
+                  (click)="removeMicroservice('backend', i)"
+                  class="ml-2 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-3 rounded w-1/3"
                 >
                   <i class="fa-solid fa-times"></i>
                 </button>
               </div>
-              <div
-                *ngIf="!developer && formSubmitted"
-                class="text-red-500 text-sm mt-1"
-              >
-                El campo "Nombre Desarrollador" es de carácter obligatorio.
-              </div>
             </div>
+            <button
+              type="button"
+              (click)="addMicroservice('backend')"
+              class="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full"
+            >
+              <i class="fa-solid fa-plus"></i> Agregar Microservicio
+            </button>
           </div>
         </div>
-
-        <!-- Microservicio Backend -->
-        <div
-          class="mb-4"
-          *ngIf="
-            microservicesBackend.length === 0 &&
-            (desarrolloHoras || tareas.length !== 0)
-          "
-        >
-          <label
-            for="microservicioBackend"
-            class="block text-sm font-medium text-gray-700"
-          >
-            Microservicio Backend *
-          </label>
-          <input
-            type="text"
-            id="microservicioBackend"
-            [(ngModel)]="formData.microservicioBackend"
-            name="microservicioBackend"
-            [ngClass]="{
-              'border-red-500': !formData.microservicioBackend && formSubmitted
-            }"
-            class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            required
-          />
-          <div
-            *ngIf="!formData.microservicioBackend && formSubmitted"
-            class="text-red-500 text-sm mt-1"
-          >
-            El campo "Microservicio Backend" es de carácter obligatorio.
-          </div>
-        </div>
-
-        <!-- Microservicio Frontend -->
-        <div
-          class="mb-4"
-          *ngIf="
-            microservicesFrontend.length === 0 &&
-            (frontendHoras || tareasFrontend.length !== 0)
-          "
-        >
-          <label
-            for="microservicioFrontend"
-            class="block text-sm font-medium text-gray-700"
-          >
-            Microservicio Frontend *
-          </label>
-          <input
-            type="text"
-            id="microservicioFrontend"
-            [(ngModel)]="formData.microservicioFrontend"
-            name="microservicioFrontend"
-            [ngClass]="{
-              'border-red-500': !formData.microservicioFrontend && formSubmitted
-            }"
-            class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            required
-          />
-          <div
-            *ngIf="!formData.microservicioFrontend && formSubmitted"
-            class="text-red-500 text-sm mt-1"
-          >
-            El campo "Microservicio Frontend" es de carácter obligatorio.
-          </div>
-        </div>
-
-        <!-- Descripción -->
-        <div class="mb-4">
-          <label
-            for="descripcion"
-            class="block text-sm font-medium text-gray-700"
-          >
-            Descripción
-          </label>
-          <textarea
-            id="descripcion"
-            [(ngModel)]="formData.descripcion"
-            name="descripcion"
-            rows="3"
-            class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            placeholder="Descripción opcional"
-          ></textarea>
-        </div>
-
-        <!-- Botones de acción -->
-        <div class="flex justify-end space-x-4">
+        <div class="flex justify-end mt-4">
           <button
-            type="button"
-            (click)="closeFormModal()"
-            class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+            class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded mr-2"
+            (click)="closeMicroservicesModal('backend')"
           >
             Cancelar
           </button>
           <button
-            type="submit"
             class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            (click)="saveMicroservices('backend')"
           >
             Guardar
           </button>
         </div>
-      </form>
+      </div>
     </div>
-  </div>
 
-  <div
-    class="min-h-screen flex flex-col justify-center items-center bg-gray-100 p-4"
-  >
     <div
-      class="flex flex-col md:flex-row items-start w-full max-w-7xl transition-all duration-500 h-full"
+      *ngIf="showMicroservicesModalFrontend"
+      class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
     >
-      <div
-        class="bg-white shadow-md rounded-lg p-6 max-w-lg w-full transition-all duration-300 flex-grow"
-        [ngClass]="{
-          'md:w-1/2': showTareasCard || showFrontendTareasCard,
-          'mx-auto': !showTareasCard && !showFrontendTareasCard
-        }"
-      >
-        <div class="flex items-center justify-between mb-6">
-          <h1 class="text-3xl font-bold text-gray-800">
-            Estimador de Desarrollos
-          </h1>
-
-          <div class="flex items-center">
-            <input
-              type="checkbox"
-              id="frontendSwitch"
-              [(ngModel)]="showFrontend"
-              (change)="handleFrontendSwitch()"
-              class="hidden"
-            />
-            <label
-              for="frontendSwitch"
-              class="flex items-center cursor-pointer"
+      <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+        <h2 class="text-xl font-bold mb-4 text-gray-800">
+          Configuración de Microservicios Frontend
+        </h2>
+        <div class="mb-4">
+          <div class="space-y-2">
+            <div
+              *ngFor="
+                let microservice of microservicesFrontend;
+                let i = index;
+                trackBy: trackByIndex
+              "
+              class="flex flex-col"
             >
-              <div class="relative">
-                <div class="block bg-gray-300 w-10 h-6 rounded-full"></div>
-                <div
-                  class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition"
-                ></div>
+              <!-- Mensaje de validación para los dos primeros inputs -->
+              <div
+                *ngIf="
+                  formSubmitted &&
+                  i < 2 &&
+                  (!microservicesFrontend[0] || !microservicesFrontend[1])
+                "
+                class="text-red-500 text-sm mb-1"
+              >
+                Deben haber al menos dos microservicios ingresados.
               </div>
-            </label>
-            <i
-              class="fa-solid fa-info-circle ml-2"
-              title="Este switch activa las horas para desarrollo frontend."
-            ></i>
+              <!-- Mensaje de validación para los inputs adicionales -->
+              <div
+                *ngIf="formSubmitted && i >= 2 && !microservice"
+                class="text-red-500 text-sm mb-1"
+              >
+                Este campo no puede estar vacío.
+              </div>
+              <div class="flex items-center">
+                <input
+                  type="text"
+                  [(ngModel)]="microservicesFrontend[i]"
+                  name="microserviceFrontend{{ i }}"
+                  class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                  required
+                  placeholder="Nombre microservicio"
+                />
+                <button
+                  *ngIf="i >= 2"
+                  type="button"
+                  (click)="removeMicroservice('frontend', i)"
+                  class="ml-2 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-3 rounded w-1/3"
+                >
+                  <i class="fa-solid fa-times"></i>
+                </button>
+              </div>
+            </div>
+            <button
+              type="button"
+              (click)="addMicroservice('frontend')"
+              class="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full"
+            >
+              <i class="fa-solid fa-plus"></i> Agregar Microservicio
+            </button>
           </div>
         </div>
-        <div class="flex items-center mb-6">
-          <label
-            for="desarrollo"
-            class="block text-lg font-medium text-gray-700 mb-2"
-            >Backend</label
-          >
-          <input
-            type="number"
-            id="desarrollo"
-            [(ngModel)]="desarrolloHoras"
-            (input)="calcularEstimacion()"
-            class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ml-4"
-            placeholder="Ingrese las horas de desarrollo"
-            [disabled]="showTareasCard"
-          />
+        <div class="flex justify-end mt-4">
           <button
-            (click)="toggleTareasCard()"
-            class="bg-gray-300 p-2 ml-4 rounded shadow flex items-center"
+            class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded mr-2"
+            (click)="closeMicroservicesModal('frontend')"
           >
-            <i *ngIf="!showTareasCard" class="fa-solid fa-arrow-right"></i>
-            <i *ngIf="showTareasCard" class="fa-solid fa-arrow-left"></i>
+            Cancelar
+          </button>
+          <button
+            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            (click)="saveMicroservices('frontend')"
+          >
+            Guardar
           </button>
         </div>
-        <div *ngIf="showFrontend" class="flex items-center mb-6">
-          <label
-            for="frontend"
-            class="block text-lg font-medium text-gray-700 mb-2"
-            >Frontend</label
-          >
-          <input
-            type="number"
-            id="frontend"
-            [(ngModel)]="frontendHoras"
-            (input)="calcularEstimacion()"
-            class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ml-4"
-            placeholder="Ingrese las horas de desarrollo"
-            [disabled]="showFrontendTareasCard"
-          />
-          <button
-            (click)="toggleFrontendTareasCard()"
-            class="bg-gray-300 p-2 ml-4 rounded shadow flex items-center"
-          >
-            <i
-              *ngIf="!showFrontendTareasCard"
-              class="fa-solid fa-arrow-right"
-            ></i>
-            <i
-              *ngIf="showFrontendTareasCard"
-              class="fa-solid fa-arrow-left"
-            ></i>
-          </button>
-        </div>
+      </div>
+    </div>
 
-        <div
-          *ngIf="
-            showEstimaciones &&
-            (tareas.length > 0 ||
-              tareasFrontend.length > 0 ||
-              desarrolloHoras ||
-              frontendHoras)
-          "
-          class="bg-gray-50 p-4 rounded-lg overflow-hidden"
-        >
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-semibold text-gray-700">Cálculo:</h2>
-            <i
-              class="fa-solid fa-cog cursor-pointer text-gray-700"
-              title="Configurar cálculos"
-              (click)="toggleConfiguracion()"
-            ></i>
-          </div>
+    <!-- PDF SECTION -->
+    <div
+      id="pdf-content"
+      class="p-4 bg-white rounded-lg shadow-lg"
+      style="display: none"
+    >
+      <!-- Sección de Datos del Documento -->
+      <div class="mb-6">
+        <h2 class="text-2xl font-bold mb-4 text-center text-gray-800">
+          Datos del Documento
+        </h2>
+        <table class="table-auto w-full mb-6">
+          <tbody>
+            <!-- Título -->
+            <tr>
+              <td
+                class="px-4 py-2 border bg-blue-100 font-bold"
+                style="width: 25%"
+              >
+                Título
+              </td>
+              <td class="px-4 py-2 border" style="width: 75%">
+                {{ formData.tituloDocumento }}
+              </td>
+            </tr>
+            <!-- Proyecto -->
+            <tr>
+              <td
+                class="px-4 py-2 border bg-blue-100 font-bold"
+                style="width: 25%"
+              >
+                Proyecto
+              </td>
+              <td class="px-4 py-2 border" style="width: 75%">
+                {{ formData.proyecto }}
+              </td>
+            </tr>
+            <!-- Autor (Desarrolladores) -->
+            <tr>
+              <td
+                class="px-4 py-2 border bg-blue-100 font-bold"
+                style="width: 25%"
+              >
+                Autor
+              </td>
+              <td class="px-4 py-2 border" style="width: 75%">
+                <ul>
+                  <li *ngFor="let dev of formData.desarrolladores">
+                    {{ dev }}
+                  </li>
+                </ul>
+              </td>
+            </tr>
+            <tr *ngIf="formData.descripcion !== ''">
+              <td
+                class="px-4 py-2 border bg-blue-100 font-bold"
+                style="width: 25%"
+              >
+                Descripción
+              </td>
+              <td class="px-4 py-2 border" style="width: 75%">
+                {{ formData.descripcion }}
+              </td>
+            </tr>
+            <!-- Versión -->
+            <tr>
+              <td
+                class="px-4 py-2 border bg-blue-100 font-bold"
+                style="width: 25%"
+              >
+                Versión
+              </td>
+              <td class="px-4 py-2 border" style="width: 75%">1.0</td>
+            </tr>
+          </tbody>
+        </table>
 
-          <!-- Encabezado de columnas para H.Back, H.Front y Total -->
-          <div class="flex justify-between mb-2">
-            <span class="flex-grow text-left"></span>
-            <!-- Espacio para alinear los títulos -->
-            <span class="w-20 text-right font-bold">H.Back</span>
-            <span class="w-20 text-right font-bold">H.Front</span>
-            <span class="w-20 text-right font-bold">Total</span>
-          </div>
-
-          <!-- Filas con los títulos y valores calculados -->
-          <ul class="space-y-2 mb-4">
-            <li class="flex justify-between items-center">
-              <span class="flex-grow text-left">Análisis Funcional:</span>
-              <span class="w-20 text-right"
-                >{{ estimaciones?.analisisFuncionalBack }} Hs.</span
+        <!-- Tabla de Registro de Cambios -->
+        <h2 class="text-2xl font-bold mb-4 text-center text-gray-800">
+          Registro de Cambios
+        </h2>
+        <table class="table-auto w-full mb-6">
+          <thead>
+            <tr class="bg-gray-100">
+              <th
+                class="px-4 py-2 border text-left font-bold text-gray-700 bg-blue-100"
+                style="width: 25%"
               >
-              <span class="w-20 text-right"
-                >{{ estimaciones?.analisisFuncionalFront }} Hs.</span
+                Versión
+              </th>
+              <th
+                class="px-4 py-2 border text-left font-bold text-gray-700 bg-blue-100"
+                style="width: 25%"
               >
-              <span class="w-20 text-right"
-                >{{ estimaciones?.analisisFuncionalTotal }} Hs.</span
+                Causa del cambio
+              </th>
+              <th
+                class="px-4 py-2 border text-left font-bold text-gray-700 bg-blue-100"
+                style="width: 25%"
               >
-            </li>
-            <li class="flex justify-between items-center">
-              <span class="flex-grow text-left">Análisis Técnico:</span>
-              <span class="w-20 text-right"
-                >{{ estimaciones?.analisisTecnicoBack }} Hs.</span
+                Responsable del cambio
+              </th>
+              <th
+                class="px-4 py-2 border text-left font-bold text-gray-700 bg-blue-100"
+                style="width: 25%"
               >
-              <span class="w-20 text-right"
-                >{{ estimaciones?.analisisTecnicoFront }} Hs.</span
-              >
-              <span class="w-20 text-right"
-                >{{ estimaciones?.analisisTecnicoTotal }} Hs.</span
-              >
-            </li>
-            <li class="flex justify-between items-center">
-              <span class="flex-grow text-left">Pruebas Unitarias:</span>
-              <span class="w-20 text-right"
-                >{{ estimaciones?.pruebasUnitariasBack }} Hs.</span
-              >
-              <span class="w-20 text-right"
-                >{{ estimaciones?.pruebasUnitariasFront }} Hs.</span
-              >
-              <span class="w-20 text-right"
-                >{{ estimaciones?.pruebasUnitariasTotal }} Hs.</span
-              >
-            </li>
-            <li class="flex justify-between items-center">
-              <span class="flex-grow text-left">Pruebas de Integración:</span>
-              <span class="w-20 text-right"
-                >{{ estimaciones?.pruebasIntegracionBack }} Hs.</span
-              >
-              <span class="w-20 text-right"
-                >{{ estimaciones?.pruebasIntegracionFront }} Hs.</span
-              >
-              <span class="w-20 text-right"
-                >{{ estimaciones?.pruebasIntegracionTotal }} Hs.</span
-              >
-            </li>
-            <li class="flex justify-between items-center">
-              <span class="flex-grow text-left">Implementación y Soporte:</span>
-              <span class="w-20 text-right"
-                >{{ estimaciones?.implementacionYSoporteBack }} Hs.</span
-              >
-              <span class="w-20 text-right"
-                >{{ estimaciones?.implementacionYSoporteFront }} Hs.</span
-              >
-              <span class="w-20 text-right"
-                >{{ estimaciones?.implementacionYSoporteTotal }} Hs.</span
-              >
-            </li>
-            <li class="flex justify-between items-center">
-              <span class="flex-grow text-left">Gestión:</span>
-              <span class="w-20 text-right"
-                >{{ estimaciones?.gestionBack }} Hs.</span
-              >
-              <span class="w-20 text-right"
-                >{{ estimaciones?.gestionFront }} Hs.</span
-              >
-              <span class="w-20 text-right"
-                >{{ estimaciones?.gestionTotal }} Hs.</span
-              >
-            </li>
-            <li class="flex justify-between items-center">
-              <span class="flex-grow text-left">Documentación:</span>
-              <span class="w-20 text-right"
-                >{{ estimaciones?.documentacionBack }} Hs.</span
-              >
-              <span class="w-20 text-right"
-                >{{ estimaciones?.documentacionFront }} Hs.</span
-              >
-              <span class="w-20 text-right"
-                >{{ estimaciones?.documentacionTotal }} Hs.</span
-              >
-            </li>
-            <li class="flex justify-between items-center">
-              <span class="flex-grow text-left">Desarrollo:</span>
-              <span class="w-20 text-right"
-                >{{ estimaciones?.desarrolloBackend }} Hs.</span
-              >
-              <span class="w-20 text-right"
-                >{{ estimaciones?.desarrolloFront }} Hs.</span
-              >
-              <span class="w-20 text-right"
-                >{{ estimaciones?.desarrolloTotal }} Hs.</span
-              >
-            </li>
-          </ul>
-
-          <hr class="my-4" />
-          <div class="flex justify-between font-bold text-lg">
-            <span>Total:</span>
-            <span>{{ totalHoras }} Horas</span>
-          </div>
-          <div class="canva-style mt-6">
-            <canvas
-              baseChart
-              [data]="pieChartData"
-              [labels]="pieChartLabels"
-              [type]="pieChartType"
-            ></canvas>
-          </div>
-        </div>
-        <div class="flex justify-end items-center mt-4">
-          <a href="https://github.com/JoaquimColacilli" target="_blank">
-            <span class="text-gray-600 mr-2">Joaquim Colacilli</span>
-
-            <i class="fa-brands fa-github text-gray-600"></i>
-          </a>
-        </div>
+                Fecha del cambio
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="px-4 py-2 border">1.0</td>
+              <td class="px-4 py-2 border">Documento inicial</td>
+              <td class="px-4 py-2 border">
+                {{ formData.desarrolladores[0] }}
+              </td>
+              <td class="px-4 py-2 border">{{ currentDate }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <div
-        *ngIf="showConfiguracion"
-        class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
-        style="z-index: 9999999999999999999999999999"
-      >
-        <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-          <div class="flex justify-between items-center mb-4">
-            <div class="tabs">
-              <button
-                [ngClass]="{ 'active-tab': activeTab === 'backend' }"
-                (click)="activeTab = 'backend'"
-                class="tab-button"
-              >
-                Configuración Backend
-              </button>
-              <button
-                [ngClass]="{ 'active-tab': activeTab === 'frontend' }"
-                (click)="activeTab = 'frontend'"
-                class="tab-button"
-              >
-                Configuración Frontend
-              </button>
-            </div>
-            <button class="text-gray-700" (click)="toggleConfiguracion()">
-              <i class="fa-solid fa-times"></i>
-            </button>
-          </div>
+      <!-- Fuerza un salto de página -->
+      <div style="page-break-before: always"></div>
 
-          <ul class="space-y-4">
-            <ng-container
-              *ngIf="activeTab === 'backend'; else frontendConfiguracion"
-            >
-              <ng-container *ngFor="let campo of camposEstimacionBackend">
-                <li class="flex flex-col">
-                  <div class="flex justify-between items-center mb-2">
-                    <span>{{ campo.label }}:</span>
-                    <div class="flex items-center ml-4">
-                      <label class="mr-2">%</label>
-                      <input
-                        type="radio"
-                        name="{{ campo.key }}"
-                        value="porcentaje"
-                        [(ngModel)]="campo.modo"
-                        class="mr-4"
-                        (change)="updateEstimaciones()"
-                      />
-                      <label class="mr-2">Horas</label>
-                      <input
-                        type="radio"
-                        name="{{ campo.key }}"
-                        value="horas"
-                        [(ngModel)]="campo.modo"
-                        (change)="updateEstimaciones()"
-                      />
-                    </div>
-                  </div>
-                  <div class="flex justify-between items-center">
-                    <div class="flex items-center">
-                      <input
-                        type="number"
-                        class="w-20 p-1 border border-gray-300 rounded-md"
-                        [(ngModel)]="campo.porcentaje"
-                        *ngIf="campo.modo === 'porcentaje'"
-                        (input)="updateEstimaciones()"
-                        [max]="100"
-                        min="0"
-                      />
-                      <span *ngIf="campo.modo === 'porcentaje'" class="ml-1"
-                        >%</span
-                      >
-                      <input
-                        type="number"
-                        class="w-20 p-1 border border-gray-300 rounded-md"
-                        [(ngModel)]="campo.horas"
-                        *ngIf="campo.modo === 'horas'"
-                        (input)="updateEstimaciones()"
-                        min="0"
-                      />
-                    </div>
-                  </div>
-                </li>
-              </ng-container>
-            </ng-container>
-
-            <ng-template #frontendConfiguracion>
-              <ng-container *ngFor="let campo of camposEstimacionFrontend">
-                <li class="flex flex-col">
-                  <div class="flex justify-between items-center mb-2">
-                    <span>{{ campo.label }}:</span>
-                    <div class="flex items-center ml-4">
-                      <label class="mr-2">%</label>
-                      <input
-                        type="radio"
-                        name="{{ campo.key }}"
-                        value="porcentaje"
-                        [(ngModel)]="campo.modo"
-                        class="mr-4"
-                        (change)="updateEstimaciones()"
-                      />
-                      <label class="mr-2">Horas</label>
-                      <input
-                        type="radio"
-                        name="{{ campo.key }}"
-                        value="horas"
-                        [(ngModel)]="campo.modo"
-                        (change)="updateEstimaciones()"
-                      />
-                    </div>
-                  </div>
-                  <div class="flex justify-between items-center">
-                    <div class="flex items-center">
-                      <input
-                        type="number"
-                        class="w-20 p-1 border border-gray-300 rounded-md"
-                        [(ngModel)]="campo.porcentaje"
-                        *ngIf="campo.modo === 'porcentaje'"
-                        (input)="updateEstimaciones()"
-                        [max]="100"
-                        min="0"
-                      />
-                      <span *ngIf="campo.modo === 'porcentaje'" class="ml-1"
-                        >%</span
-                      >
-                      <input
-                        type="number"
-                        class="w-20 p-1 border border-gray-300 rounded-md"
-                        [(ngModel)]="campo.horas"
-                        *ngIf="campo.modo === 'horas'"
-                        (input)="updateEstimaciones()"
-                        min="0"
-                      />
-                    </div>
-                  </div>
-                </li>
-              </ng-container>
-            </ng-template>
-          </ul>
-
-          <div class="flex justify-between mt-4">
-            <button
-              class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
-              (click)="restablecerValores()"
-            >
-              Restablecer valores
-            </button>
-            <button
-              class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-              (click)="guardarConfiguracion()"
-              [disabled]="!isValidConfiguration()"
-              [ngClass]="{
-                'bg-gray-400 cursor-not-allowed': !isValidConfiguration(),
-                'bg-blue-500 hover:bg-blue-700 cursor-pointer':
-                  isValidConfiguration()
-              }"
-            >
-              Guardar
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div
-        *ngIf="showTareasCard"
-        class="bg-white shadow-md rounded-lg p-6 w-full md:w-1/2 ml-6 transition-all h-full flex flex-col relative"
-      >
-        <div class="absolute top-0 right-0 mt-4 mr-4 flex items-center">
-          <i
-            class="fa-solid fa-cog cursor-pointer text-gray-700"
-            title="Este botón permitirá configurar múltiples microservicios para Backend."
-            (click)="toggleMicroservicesModal('backend')"
-          ></i>
-        </div>
-
-        <h2 class="text-2xl font-semibold mb-2 text-gray-700">
-          Agregar Tareas Backend
+      <!-- Resumen de Tareas y Cálculos -->
+      <div>
+        <h2 class="text-2xl font-bold mb-4 text-center text-gray-800">
+          Resumen de Tareas y Cálculos
         </h2>
 
-        <div class="mb-2 flex items-center">
-          <div
-            [ngClass]="{
-              'w-2/3': microservicesBackend.length > 0,
-              'w-full': microservicesBackend.length === 0
-            }"
-            class="mr-4"
-          >
-            <label
-              for="tareaNombre"
-              class="block text-lg font-medium text-gray-700"
-              >Tarea</label
-            >
-            <input
-              type="text"
-              id="tareaNombre"
-              [(ngModel)]="tareaNombre"
-              class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-              placeholder="Ingrese el nombre de la tarea"
-            />
-          </div>
-          <div class="w-1/3 mr-4" *ngIf="microservicesBackend.length > 0">
-            <label
-              for="microserviceSelect"
-              class="block text-lg font-medium text-gray-700"
-              >Microservicio</label
-            >
-            <select
-              id="microserviceSelect"
-              [(ngModel)]="selectedMicroserviceBackend"
-              class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="">Seleccione un microservicio</option>
-              <option *ngFor="let ms of microservicesBackend" [value]="ms">
-                {{ ms }}
-              </option>
-            </select>
-          </div>
-          <div class="w-1/3">
-            <label
-              for="tareaHoras"
-              class="block text-lg font-medium text-gray-700"
-              >Horas</label
-            >
-            <input
-              type="number"
-              id="tareaHoras"
-              [(ngModel)]="tareaHoras"
-              class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-              placeholder="Horas"
-            />
-          </div>
-        </div>
-        <button
-          (click)="agregarTarea('backend')"
-          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-        >
-          Agregar
-        </button>
-        <ul class="flex-grow overflow-y-auto">
-          <li
-            *ngFor="let tarea of tareas; let i = index"
-            class="flex justify-between p-2 border-b border-gray-300 items-center"
-          >
-            <div class="w-1/3 mr-4">
-              <span
-                class="block break-words whitespace-normal"
-                style="overflow-y: auto; max-height: 128px"
-                >{{ tarea.nombre }}</span
-              >
-            </div>
-            <div class="w-1/3 mr-4" *ngIf="tarea['microservice']">
-              <span
-                class="block break-words whitespace-normal"
-                style="overflow-y: auto; max-height: 128px"
-                >{{ tarea["microservice"] }}</span
-              >
-            </div>
-            <div class="w-1/3 text-center">
-              <span>{{ tarea.horas }} Hs.</span>
-            </div>
-            <div class="flex items-center">
-              <button (click)="editarTarea('backend', i)">
-                <i class="fa fa-edit mr-2"></i>
-              </button>
-              <button (click)="eliminarTarea('backend', i)">
-                <i class="fa fa-trash eliminar-button"></i>
-              </button>
-            </div>
-          </li>
-        </ul>
-      </div>
-
-      <div
-        *ngIf="showFrontendTareasCard"
-        class="bg-white shadow-md rounded-lg p-6 w-full md:w-1/2 ml-6 transition-all h-full flex flex-col relative"
-      >
-        <div class="absolute top-0 right-0 mt-4 mr-4 flex items-center">
-          <i
-            class="fa-solid fa-cog cursor-pointer text-gray-700"
-            title="Este botón permitirá configurar múltiples microservicios para Frontend."
-            (click)="toggleMicroservicesModal('frontend')"
-          ></i>
-        </div>
-
-        <h2 class="text-2xl font-semibold mb-2 text-gray-700">
-          Agregar Tareas Frontend
-        </h2>
-
-        <div class="mb-2 flex items-center">
-          <div
-            [ngClass]="{
-              'w-2/3': microservicesFrontend.length > 0,
-              'w-full': microservicesFrontend.length === 0
-            }"
-            class="mr-4"
-          >
-            <label
-              for="tareaNombreFrontend"
-              class="block text-lg font-medium text-gray-700"
-              >Tarea</label
-            >
-            <input
-              type="text"
-              id="tareaNombreFrontend"
-              [(ngModel)]="tareaNombreFrontend"
-              class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-              placeholder="Ingrese el nombre de la tarea"
-            />
-          </div>
-          <div class="w-1/3 mr-4" *ngIf="microservicesFrontend.length > 0">
-            <label
-              for="microserviceSelectFrontend"
-              class="block text-lg font-medium text-gray-700"
-              >Microservicio</label
-            >
-            <select
-              id="microserviceSelectFrontend"
-              [(ngModel)]="selectedMicroserviceFrontend"
-              class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="">Seleccione un microservicio</option>
-              <option *ngFor="let ms of microservicesFrontend" [value]="ms">
-                {{ ms }}
-              </option>
-            </select>
-          </div>
-
-          <div class="w-1/3">
-            <label
-              for="tareaHorasFrontend"
-              class="block text-lg font-medium text-gray-700"
-              >Horas</label
-            >
-            <input
-              type="number"
-              id="tareaHorasFrontend"
-              [(ngModel)]="tareaHorasFrontend"
-              class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-              placeholder="Horas"
-            />
-          </div>
-        </div>
-        <button
-          (click)="agregarTarea('frontend')"
-          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-        >
-          Agregar
-        </button>
-        <ul class="flex-grow overflow-y-auto">
-          <li
-            *ngFor="let tarea of tareasFrontend; let i = index"
-            class="flex justify-between p-2 border-b border-gray-300 items-center"
-          >
-            <div class="w-1/3 mr-4">
-              <span
-                class="block break-words whitespace-normal"
-                style="overflow-y: auto; max-height: 128px"
-                >{{ tarea.nombre }}</span
-              >
-            </div>
-            <div class="w-1/3 mr-4" *ngIf="tarea['microservice']">
-              <span
-                class="block break-words whitespace-normal"
-                style="overflow-y: auto; max-height: 128px"
-                >{{ tarea["microservice"] }}</span
-              >
-            </div>
-            <div class="w-1/3 text-center">
-              <span>{{ tarea.horas }} Hs.</span>
-            </div>
-            <div class="flex items-center">
-              <button (click)="editarTarea('frontend', i)">
-                <i class="fa fa-edit mr-2"></i>
-              </button>
-              <button (click)="eliminarTarea('frontend', i)">
-                <i class="fa fa-trash eliminar-button"></i>
-              </button>
-            </div>
-          </li>
-        </ul>
-      </div>
-
-      <div
-        *ngIf="showMicroservicesModalBackend"
-        class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
-      >
-        <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-          <h2 class="text-xl font-bold mb-4 text-gray-800">
-            Configuración de Microservicios Backend
-          </h2>
-          <div class="mb-4">
-            <div class="space-y-2">
-              <div
-                *ngFor="
-                  let microservice of microservicesBackend;
-                  let i = index;
-                  trackBy: trackByIndex
-                "
-                class="flex flex-col"
-              >
-                <!-- Mensaje de validación para los dos primeros inputs -->
-                <div
-                  *ngIf="
-                    formSubmitted &&
-                    i < 2 &&
-                    (!microservicesBackend[0] || !microservicesBackend[1])
-                  "
-                  class="text-red-500 text-sm mb-1"
-                >
-                  Deben haber al menos dos microservicios ingresados.
-                </div>
-                <div
-                  *ngIf="formSubmitted && i >= 2 && !microservice"
-                  class="text-red-500 text-sm mb-1"
-                >
-                  Este campo no puede estar vacío.
-                </div>
-                <div class="flex items-center">
-                  <input
-                    type="text"
-                    [(ngModel)]="microservicesBackend[i]"
-                    name="microserviceBackend{{ i }}"
-                    class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                    required
-                    placeholder="Nombre microservicio"
-                  />
-                  <button
-                    *ngIf="i >= 2"
-                    type="button"
-                    (click)="removeMicroservice('backend', i)"
-                    class="ml-2 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-3 rounded w-1/3"
-                  >
-                    <i class="fa-solid fa-times"></i>
-                  </button>
-                </div>
-              </div>
-              <button
-                type="button"
-                (click)="addMicroservice('backend')"
-                class="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full"
-              >
-                <i class="fa-solid fa-plus"></i> Agregar Microservicio
-              </button>
-            </div>
-          </div>
-          <div class="flex justify-end mt-4">
-            <button
-              class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded mr-2"
-              (click)="closeMicroservicesModal('backend')"
-            >
-              Cancelar
-            </button>
-            <button
-              class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-              (click)="saveMicroservices('backend')"
-            >
-              Guardar
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div
-        *ngIf="showMicroservicesModalFrontend"
-        class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
-      >
-        <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-          <h2 class="text-xl font-bold mb-4 text-gray-800">
-            Configuración de Microservicios Frontend
-          </h2>
-          <div class="mb-4">
-            <div class="space-y-2">
-              <div
-                *ngFor="
-                  let microservice of microservicesFrontend;
-                  let i = index;
-                  trackBy: trackByIndex
-                "
-                class="flex flex-col"
-              >
-                <!-- Mensaje de validación para los dos primeros inputs -->
-                <div
-                  *ngIf="
-                    formSubmitted &&
-                    i < 2 &&
-                    (!microservicesFrontend[0] || !microservicesFrontend[1])
-                  "
-                  class="text-red-500 text-sm mb-1"
-                >
-                  Deben haber al menos dos microservicios ingresados.
-                </div>
-                <!-- Mensaje de validación para los inputs adicionales -->
-                <div
-                  *ngIf="formSubmitted && i >= 2 && !microservice"
-                  class="text-red-500 text-sm mb-1"
-                >
-                  Este campo no puede estar vacío.
-                </div>
-                <div class="flex items-center">
-                  <input
-                    type="text"
-                    [(ngModel)]="microservicesFrontend[i]"
-                    name="microserviceFrontend{{ i }}"
-                    class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                    required
-                    placeholder="Nombre microservicio"
-                  />
-                  <button
-                    *ngIf="i >= 2"
-                    type="button"
-                    (click)="removeMicroservice('frontend', i)"
-                    class="ml-2 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-3 rounded w-1/3"
-                  >
-                    <i class="fa-solid fa-times"></i>
-                  </button>
-                </div>
-              </div>
-              <button
-                type="button"
-                (click)="addMicroservice('frontend')"
-                class="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full"
-              >
-                <i class="fa-solid fa-plus"></i> Agregar Microservicio
-              </button>
-            </div>
-          </div>
-          <div class="flex justify-end mt-4">
-            <button
-              class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded mr-2"
-              (click)="closeMicroservicesModal('frontend')"
-            >
-              Cancelar
-            </button>
-            <button
-              class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-              (click)="saveMicroservices('frontend')"
-            >
-              Guardar
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- PDF SECTION -->
-      <div
-        id="pdf-content"
-        class="p-4 bg-white rounded-lg shadow-lg"
-        style="display: none"
-      >
-        <!-- Sección de Datos del Documento -->
-        <div class="mb-6">
-          <h2 class="text-2xl font-bold mb-4 text-center text-gray-800">
-            Datos del Documento
-          </h2>
-          <table class="table-auto w-full mb-6">
-            <tbody>
-              <!-- Título -->
-              <tr>
-                <td
-                  class="px-4 py-2 border bg-blue-100 font-bold"
-                  style="width: 25%"
-                >
-                  Título
-                </td>
-                <td class="px-4 py-2 border" style="width: 75%">
-                  {{ formData.tituloDocumento }}
-                </td>
-              </tr>
-              <!-- Proyecto -->
-              <tr>
-                <td
-                  class="px-4 py-2 border bg-blue-100 font-bold"
-                  style="width: 25%"
-                >
-                  Proyecto
-                </td>
-                <td class="px-4 py-2 border" style="width: 75%">
-                  {{ formData.proyecto }}
-                </td>
-              </tr>
-              <!-- Autor (Desarrolladores) -->
-              <tr>
-                <td
-                  class="px-4 py-2 border bg-blue-100 font-bold"
-                  style="width: 25%"
-                >
-                  Autor
-                </td>
-                <td class="px-4 py-2 border" style="width: 75%">
-                  <ul>
-                    <li *ngFor="let dev of formData.desarrolladores">
-                      {{ dev }}
-                    </li>
-                  </ul>
-                </td>
-              </tr>
-              <tr *ngIf="formData.descripcion !== ''">
-                <td
-                  class="px-4 py-2 border bg-blue-100 font-bold"
-                  style="width: 25%"
-                >
-                  Descripción
-                </td>
-                <td class="px-4 py-2 border" style="width: 75%">
-                  {{ formData.descripcion }}
-                </td>
-              </tr>
-              <!-- Versión -->
-              <tr>
-                <td
-                  class="px-4 py-2 border bg-blue-100 font-bold"
-                  style="width: 25%"
-                >
-                  Versión
-                </td>
-                <td class="px-4 py-2 border" style="width: 75%">1.0</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <!-- Tabla de Registro de Cambios -->
-          <h2 class="text-2xl font-bold mb-4 text-center text-gray-800">
-            Registro de Cambios
-          </h2>
+        <!-- Tabla Backend (mostrar solo si hay horas de Backend) -->
+        <ng-container *ngIf="totalBackendHoras > 0">
           <table class="table-auto w-full mb-6">
             <thead>
               <tr class="bg-gray-100">
                 <th
-                  class="px-4 py-2 border text-left font-bold text-gray-700 bg-blue-100"
-                  style="width: 25%"
+                  class="px-4 py-2 border text-left font-bold text-gray-700"
+                  style="width: 40%"
                 >
-                  Versión
+                  Tarea
                 </th>
                 <th
-                  class="px-4 py-2 border text-left font-bold text-gray-700 bg-blue-100"
-                  style="width: 25%"
+                  class="px-4 py-2 border text-left font-bold text-gray-700"
+                  style="width: 30%"
                 >
-                  Causa del cambio
+                  Microservicio
                 </th>
                 <th
-                  class="px-4 py-2 border text-left font-bold text-gray-700 bg-blue-100"
-                  style="width: 25%"
+                  class="px-4 py-2 border text-left font-bold text-gray-700"
+                  style="width: 30%"
                 >
-                  Responsable del cambio
+                  Horas
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <ng-container *ngIf="tareas.length > 0; else noTareasBackend">
+                <tr *ngFor="let tarea of tareas">
+                  <td class="px-4 py-2 border">
+                    <span class="block break-words whitespace-normal">
+                      {{ tarea.nombre }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-2 border" *ngIf="tarea.microservice">
+                    <span class="block break-words whitespace-normal">
+                      {{ tarea.microservice }}
+                    </span>
+                  </td>
+                  <td
+                    class="px-4 py-2 border"
+                    *ngIf="formData.microservicioBackend"
+                  >
+                    <span class="block break-words whitespace-normal">
+                      {{ formData.microservicioBackend }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-2 border text-right">
+                    {{ tarea.horas }} Hs.
+                  </td>
+                </tr>
+              </ng-container>
+              <ng-template #noTareasBackend>
+                <tr>
+                  <td class="px-4 py-2 border">Horas de Desarrollo</td>
+                  <td class="px-4 py-2 border">
+                    <span class="block break-words whitespace-normal">
+                      {{ formData.microservicioBackend }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-2 border text-right" colspan="2">
+                    {{ desarrolloHoras }} Hs.
+                  </td>
+                </tr>
+              </ng-template>
+              <tr>
+                <td class="px-4 py-2 border bg-gray-100 font-bold" colspan="2">
+                  Total Backend
+                </td>
+                <td class="px-4 py-2 border bg-gray-100 text-right">
+                  {{ totalBackendHoras }} Hs.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </ng-container>
+
+        <ng-container *ngIf="totalFrontendHoras > 0">
+          <table class="table-auto w-full mb-6">
+            <thead>
+              <tr class="bg-gray-100">
+                <th
+                  class="px-4 py-2 border text-left font-bold text-gray-700"
+                  style="width: 40%"
+                >
+                  Tarea
                 </th>
                 <th
-                  class="px-4 py-2 border text-left font-bold text-gray-700 bg-blue-100"
-                  style="width: 25%"
+                  class="px-4 py-2 border text-left font-bold text-gray-700"
+                  style="width: 30%"
                 >
-                  Fecha del cambio
+                  Microservicio
+                </th>
+                <th
+                  class="px-4 py-2 border text-left font-bold text-gray-700"
+                  style="width: 30%"
+                >
+                  Horas
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <ng-container
+                *ngIf="tareasFrontend.length > 0; else noTareasFrontend"
+              >
+                <tr *ngFor="let tarea of tareasFrontend">
+                  <td class="px-4 py-2 border">
+                    <span class="block break-words whitespace-normal">
+                      {{ tarea.nombre }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-2 border" *ngIf="tarea.microservice">
+                    <span class="block break-words whitespace-normal">
+                      {{ tarea.microservice }}
+                    </span>
+                  </td>
+                  <td
+                    class="px-4 py-2 border"
+                    *ngIf="formData.microservicioFrontend"
+                  >
+                    <span class="block break-words whitespace-normal">
+                      {{ formData.microservicioFrontend }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-2 border text-right">
+                    {{ tarea.horas }} Hs.
+                  </td>
+                </tr>
+              </ng-container>
+              <ng-template #noTareasFrontend>
+                <tr>
+                  <td class="px-4 py-2 border">Horas de Desarrollo</td>
+                  <td class="px-4 py-2 border">
+                    <span class="block break-words whitespace-normal">
+                      {{ formData.microservicioFrontend }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-2 border text-right" colspan="2">
+                    {{ frontendHoras }} Hs.
+                  </td>
+                </tr>
+              </ng-template>
+              <tr>
+                <td class="px-4 py-2 border bg-gray-100 font-bold" colspan="2">
+                  Total Frontend
+                </td>
+                <td class="px-4 py-2 border bg-gray-100 text-right">
+                  {{ totalFrontendHoras }} Hs.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </ng-container>
+
+        <!-- Total Desarrollo (mostrar solo si hay Backend o Frontend) -->
+        <ng-container *ngIf="totalBackendHoras > 0 || totalFrontendHoras > 0">
+          <div class="mt-6 font-bold text-lg text-right">
+            <span>Total Desarrollo:</span>
+            <span class="text-gray-800">
+              {{ estimaciones?.desarrolloTotal }} Hs.
+            </span>
+          </div>
+        </ng-container>
+
+        <ng-container
+          *ngIf="totalCalculoBackend > 0 || totalCalculoFrontend > 0"
+        >
+          <table class="table-auto w-full mt-4">
+            <thead>
+              <tr class="bg-gray-100">
+                <th
+                  style="
+                    padding: 8px;
+                    border: 1px solid #e5e7eb;
+                    text-align: left;
+                    font-weight: 600;
+                    color: #4b5563;
+                    vertical-align: middle;
+                  "
+                >
+                  Cálculo Análisis
+                </th>
+                <th
+                  style="
+                    padding: 8px;
+                    border: 1px solid #e5e7eb;
+                    text-align: left;
+                    font-weight: 600;
+                    color: #4b5563;
+                    vertical-align: middle;
+                  "
+                  *ngIf="totalBackendHoras > 0"
+                >
+                  Backend
+                </th>
+                <th
+                  style="
+                    padding: 8px;
+                    border: 1px solid #e5e7eb;
+                    text-align: left;
+                    font-weight: 600;
+                    color: #4b5563;
+                    vertical-align: middle;
+                  "
+                  *ngIf="totalFrontendHoras > 0"
+                >
+                  Frontend
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let campo of camposEstimacionBackend">
+                <td class="px-4 py-2 border">{{ campo.label }}</td>
+                <ng-container *ngIf="totalBackendHoras > 0">
+                  <td class="px-4 py-2 border text-right">
+                    {{ estimaciones?.[campo.key + 'Back'] }} Hs.
+                  </td>
+                </ng-container>
+                <ng-container *ngIf="totalFrontendHoras > 0">
+                  <td class="px-4 py-2 border text-right">
+                    {{ estimaciones?.[campo.key + 'Front'] }} Hs.
+                  </td>
+                </ng-container>
+              </tr>
+              <tr class="font-bold">
+                <td class="px-4 py-2 border bg-gray-200">Total</td>
+                <ng-container *ngIf="totalBackendHoras > 0">
+                  <td class="px-4 py-2 border bg-gray-200 text-right">
+                    {{ totalCalculoBackend }} Hs.
+                  </td>
+                </ng-container>
+                <ng-container *ngIf="totalFrontendHoras > 0">
+                  <td class="px-4 py-2 border bg-gray-200 text-right">
+                    {{ totalCalculoFrontend }} Hs.
+                  </td>
+                </ng-container>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="mt-6 font-bold text-lg text-right">
+            <span>Total Cálculo Análisis:</span>
+            <span class="text-gray-800">
+              {{ totalCalculoBackend + totalCalculoFrontend }} Hs.
+            </span>
+          </div>
+        </ng-container>
+
+        <!-- Cálculo Análisis -->
+        <ng-container
+          *ngIf="totalCalculoBackend > 0 || totalCalculoFrontend > 0"
+        >
+          <table class="table-auto w-full mt-6">
+            <thead>
+              <tr class="bg-gray-100">
+                <th
+                  class="px-4 py-2 border text-center font-semibold text-gray-700"
+                  style="width: 50%"
+                >
+                  Desarrollo / Cálculo
+                </th>
+                <th
+                  class="px-4 py-2 border text-center font-semibold text-gray-700"
+                  [attr.colspan]="
+                    totalBackendHoras > 0 && totalFrontendHoras > 0 ? 1 : 2
+                  "
+                >
+                  Backend
+                </th>
+                <ng-container
+                  *ngIf="totalBackendHoras > 0 && totalFrontendHoras > 0"
+                >
+                  <th
+                    class="px-4 py-2 border text-center font-semibold text-gray-700"
+                  >
+                    Frontend
+                  </th>
+                </ng-container>
+                <th
+                  class="px-4 py-2 border text-center font-semibold text-gray-700"
+                >
+                  Total
                 </th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td class="px-4 py-2 border">1.0</td>
-                <td class="px-4 py-2 border">Documento inicial</td>
-                <td class="px-4 py-2 border">
-                  {{ formData.desarrolladores[0] }}
+                <td class="px-4 py-2 border font-bold text-gray-700">
+                  Desarrollo
                 </td>
-                <td class="px-4 py-2 border">{{ currentDate }}</td>
+                <ng-container *ngIf="totalBackendHoras > 0">
+                  <td
+                    class="px-4 py-2 border text-right"
+                    [attr.colspan]="
+                      totalBackendHoras > 0 && totalFrontendHoras === 0 ? 2 : 1
+                    "
+                  >
+                    {{ totalBackendHoras }} Hs.
+                  </td>
+                </ng-container>
+                <ng-container *ngIf="totalFrontendHoras > 0">
+                  <td
+                    class="px-4 py-2 border text-right"
+                    [attr.colspan]="
+                      totalFrontendHoras > 0 && totalBackendHoras === 0 ? 2 : 1
+                    "
+                  >
+                    {{ totalFrontendHoras }} Hs.
+                  </td>
+                </ng-container>
+                <td class="px-4 py-2 border text-right">
+                  {{ totalBackendHoras + totalFrontendHoras }} Hs.
+                </td>
+              </tr>
+              <tr>
+                <td class="px-4 py-2 border font-bold text-gray-700">
+                  Cálculo Análisis
+                </td>
+                <ng-container *ngIf="totalBackendHoras > 0">
+                  <td
+                    class="px-4 py-2 border text-right"
+                    [attr.colspan]="
+                      totalBackendHoras > 0 && totalFrontendHoras === 0 ? 2 : 1
+                    "
+                  >
+                    {{ totalCalculoBackend }} Hs.
+                  </td>
+                </ng-container>
+                <ng-container *ngIf="totalFrontendHoras > 0">
+                  <td
+                    class="px-4 py-2 border text-right"
+                    [attr.colspan]="
+                      totalFrontendHoras > 0 && totalBackendHoras === 0 ? 2 : 1
+                    "
+                  >
+                    {{ totalCalculoFrontend }} Hs.
+                  </td>
+                </ng-container>
+                <td class="px-4 py-2 border text-right">
+                  {{ totalCalculoBackend + totalCalculoFrontend }} Hs.
+                </td>
+              </tr>
+              <tr class="font-bold bg-gray-200">
+                <td colspan="3" class="px-4 py-2 border text-left">
+                  Total Estimación
+                </td>
+                <td class="px-4 py-2 border text-right">
+                  {{
+                    totalBackendHoras +
+                      totalFrontendHoras +
+                      totalCalculoBackend +
+                      totalCalculoFrontend
+                  }}
+                  Hs.
+                </td>
               </tr>
             </tbody>
           </table>
-        </div>
-
-        <!-- Fuerza un salto de página -->
-        <div style="page-break-before: always"></div>
-
-        <!-- Resumen de Tareas y Cálculos -->
-        <div>
-          <h2 class="text-2xl font-bold mb-4 text-center text-gray-800">
-            Resumen de Tareas y Cálculos
-          </h2>
-
-          <!-- Tabla Backend (mostrar solo si hay horas de Backend) -->
-          <ng-container *ngIf="totalBackendHoras > 0">
-            <table class="table-auto w-full mb-6">
-              <thead>
-                <tr class="bg-gray-100">
-                  <th
-                    class="px-4 py-2 border text-left font-bold text-gray-700"
-                    style="width: 40%"
-                  >
-                    Tarea
-                  </th>
-                  <th
-                    class="px-4 py-2 border text-left font-bold text-gray-700"
-                    style="width: 30%"
-                  >
-                    Microservicio
-                  </th>
-                  <th
-                    class="px-4 py-2 border text-left font-bold text-gray-700"
-                    style="width: 30%"
-                  >
-                    Horas
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <ng-container *ngIf="tareas.length > 0; else noTareasBackend">
-                  <tr *ngFor="let tarea of tareas">
-                    <td class="px-4 py-2 border">
-                      <span class="block break-words whitespace-normal">
-                        {{ tarea.nombre }}
-                      </span>
-                    </td>
-                    <td class="px-4 py-2 border" *ngIf="tarea.microservice">
-                      <span class="block break-words whitespace-normal">
-                        {{ tarea.microservice }}
-                      </span>
-                    </td>
-                    <td
-                      class="px-4 py-2 border"
-                      *ngIf="formData.microservicioBackend"
-                    >
-                      <span class="block break-words whitespace-normal">
-                        {{ formData.microservicioBackend }}
-                      </span>
-                    </td>
-                    <td class="px-4 py-2 border text-right">
-                      {{ tarea.horas }} Hs.
-                    </td>
-                  </tr>
-                </ng-container>
-                <ng-template #noTareasBackend>
-                  <tr>
-                    <td class="px-4 py-2 border">Horas de Desarrollo</td>
-                    <td class="px-4 py-2 border">
-                      <span class="block break-words whitespace-normal">
-                        {{ formData.microservicioBackend }}
-                      </span>
-                    </td>
-                    <td class="px-4 py-2 border text-right" colspan="2">
-                      {{ desarrolloHoras }} Hs.
-                    </td>
-                  </tr>
-                </ng-template>
-                <tr>
-                  <td
-                    class="px-4 py-2 border bg-gray-100 font-bold"
-                    colspan="2"
-                  >
-                    Total Backend
-                  </td>
-                  <td class="px-4 py-2 border bg-gray-100 text-right">
-                    {{ totalBackendHoras }} Hs.
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </ng-container>
-
-          <ng-container *ngIf="totalFrontendHoras > 0">
-            <table class="table-auto w-full mb-6">
-              <thead>
-                <tr class="bg-gray-100">
-                  <th
-                    class="px-4 py-2 border text-left font-bold text-gray-700"
-                    style="width: 40%"
-                  >
-                    Tarea
-                  </th>
-                  <th
-                    class="px-4 py-2 border text-left font-bold text-gray-700"
-                    style="width: 30%"
-                  >
-                    Microservicio
-                  </th>
-                  <th
-                    class="px-4 py-2 border text-left font-bold text-gray-700"
-                    style="width: 30%"
-                  >
-                    Horas
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <ng-container
-                  *ngIf="tareasFrontend.length > 0; else noTareasFrontend"
-                >
-                  <tr *ngFor="let tarea of tareasFrontend">
-                    <td class="px-4 py-2 border">
-                      <span class="block break-words whitespace-normal">
-                        {{ tarea.nombre }}
-                      </span>
-                    </td>
-                    <td class="px-4 py-2 border" *ngIf="tarea.microservice">
-                      <span class="block break-words whitespace-normal">
-                        {{ tarea.microservice }}
-                      </span>
-                    </td>
-                    <td
-                      class="px-4 py-2 border"
-                      *ngIf="formData.microservicioFrontend"
-                    >
-                      <span class="block break-words whitespace-normal">
-                        {{ formData.microservicioFrontend }}
-                      </span>
-                    </td>
-                    <td class="px-4 py-2 border text-right">
-                      {{ tarea.horas }} Hs.
-                    </td>
-                  </tr>
-                </ng-container>
-                <ng-template #noTareasFrontend>
-                  <tr>
-                    <td class="px-4 py-2 border">Horas de Desarrollo</td>
-                    <td class="px-4 py-2 border">
-                      <span class="block break-words whitespace-normal">
-                        {{ formData.microservicioFrontend }}
-                      </span>
-                    </td>
-                    <td class="px-4 py-2 border text-right" colspan="2">
-                      {{ frontendHoras }} Hs.
-                    </td>
-                  </tr>
-                </ng-template>
-                <tr>
-                  <td
-                    class="px-4 py-2 border bg-gray-100 font-bold"
-                    colspan="2"
-                  >
-                    Total Frontend
-                  </td>
-                  <td class="px-4 py-2 border bg-gray-100 text-right">
-                    {{ totalFrontendHoras }} Hs.
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </ng-container>
-
-          <!-- Total Desarrollo (mostrar solo si hay Backend o Frontend) -->
-          <ng-container *ngIf="totalBackendHoras > 0 || totalFrontendHoras > 0">
-            <div class="mt-6 font-bold text-lg text-right">
-              <span>Total Desarrollo:</span>
-              <span class="text-gray-800">
-                {{ estimaciones?.desarrolloTotal }} Hs.
-              </span>
-            </div>
-          </ng-container>
-
-          <ng-container
-            *ngIf="totalCalculoBackend > 0 || totalCalculoFrontend > 0"
-          >
-            <table class="table-auto w-full mt-4">
-              <thead>
-                <tr class="bg-gray-100">
-                  <th
-                    style="
-                      padding: 8px;
-                      border: 1px solid #e5e7eb;
-                      text-align: left;
-                      font-weight: 600;
-                      color: #4b5563;
-                      vertical-align: middle;
-                    "
-                  >
-                    Cálculo Análisis
-                  </th>
-                  <th
-                    style="
-                      padding: 8px;
-                      border: 1px solid #e5e7eb;
-                      text-align: left;
-                      font-weight: 600;
-                      color: #4b5563;
-                      vertical-align: middle;
-                    "
-                    *ngIf="totalBackendHoras > 0"
-                  >
-                    Backend
-                  </th>
-                  <th
-                    style="
-                      padding: 8px;
-                      border: 1px solid #e5e7eb;
-                      text-align: left;
-                      font-weight: 600;
-                      color: #4b5563;
-                      vertical-align: middle;
-                    "
-                    *ngIf="totalFrontendHoras > 0"
-                  >
-                    Frontend
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let campo of camposEstimacionBackend">
-                  <td class="px-4 py-2 border">{{ campo.label }}</td>
-                  <ng-container *ngIf="totalBackendHoras > 0">
-                    <td class="px-4 py-2 border text-right">
-                      {{ estimaciones?.[campo.key + 'Back'] }} Hs.
-                    </td>
-                  </ng-container>
-                  <ng-container *ngIf="totalFrontendHoras > 0">
-                    <td class="px-4 py-2 border text-right">
-                      {{ estimaciones?.[campo.key + 'Front'] }} Hs.
-                    </td>
-                  </ng-container>
-                </tr>
-                <tr class="font-bold">
-                  <td class="px-4 py-2 border bg-gray-200">Total</td>
-                  <ng-container *ngIf="totalBackendHoras > 0">
-                    <td class="px-4 py-2 border bg-gray-200 text-right">
-                      {{ totalCalculoBackend }} Hs.
-                    </td>
-                  </ng-container>
-                  <ng-container *ngIf="totalFrontendHoras > 0">
-                    <td class="px-4 py-2 border bg-gray-200 text-right">
-                      {{ totalCalculoFrontend }} Hs.
-                    </td>
-                  </ng-container>
-                </tr>
-              </tbody>
-            </table>
-
-            <div class="mt-6 font-bold text-lg text-right">
-              <span>Total Cálculo Análisis:</span>
-              <span class="text-gray-800">
-                {{ totalCalculoBackend + totalCalculoFrontend }} Hs.
-              </span>
-            </div>
-          </ng-container>
-
-          <!-- Cálculo Análisis -->
-          <ng-container
-            *ngIf="totalCalculoBackend > 0 || totalCalculoFrontend > 0"
-          >
-            <table class="table-auto w-full mt-6">
-              <thead>
-                <tr class="bg-gray-100">
-                  <th
-                    class="px-4 py-2 border text-center font-semibold text-gray-700"
-                    style="width: 50%"
-                  >
-                    Desarrollo / Cálculo
-                  </th>
-                  <th
-                    class="px-4 py-2 border text-center font-semibold text-gray-700"
-                    [attr.colspan]="
-                      totalBackendHoras > 0 && totalFrontendHoras > 0 ? 1 : 2
-                    "
-                  >
-                    Backend
-                  </th>
-                  <ng-container
-                    *ngIf="totalBackendHoras > 0 && totalFrontendHoras > 0"
-                  >
-                    <th
-                      class="px-4 py-2 border text-center font-semibold text-gray-700"
-                    >
-                      Frontend
-                    </th>
-                  </ng-container>
-                  <th
-                    class="px-4 py-2 border text-center font-semibold text-gray-700"
-                  >
-                    Total
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td class="px-4 py-2 border font-bold text-gray-700">
-                    Desarrollo
-                  </td>
-                  <ng-container *ngIf="totalBackendHoras > 0">
-                    <td
-                      class="px-4 py-2 border text-right"
-                      [attr.colspan]="
-                        totalBackendHoras > 0 && totalFrontendHoras === 0
-                          ? 2
-                          : 1
-                      "
-                    >
-                      {{ totalBackendHoras }} Hs.
-                    </td>
-                  </ng-container>
-                  <ng-container *ngIf="totalFrontendHoras > 0">
-                    <td
-                      class="px-4 py-2 border text-right"
-                      [attr.colspan]="
-                        totalFrontendHoras > 0 && totalBackendHoras === 0
-                          ? 2
-                          : 1
-                      "
-                    >
-                      {{ totalFrontendHoras }} Hs.
-                    </td>
-                  </ng-container>
-                  <td class="px-4 py-2 border text-right">
-                    {{ totalBackendHoras + totalFrontendHoras }} Hs.
-                  </td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-2 border font-bold text-gray-700">
-                    Cálculo Análisis
-                  </td>
-                  <ng-container *ngIf="totalBackendHoras > 0">
-                    <td
-                      class="px-4 py-2 border text-right"
-                      [attr.colspan]="
-                        totalBackendHoras > 0 && totalFrontendHoras === 0
-                          ? 2
-                          : 1
-                      "
-                    >
-                      {{ totalCalculoBackend }} Hs.
-                    </td>
-                  </ng-container>
-                  <ng-container *ngIf="totalFrontendHoras > 0">
-                    <td
-                      class="px-4 py-2 border text-right"
-                      [attr.colspan]="
-                        totalFrontendHoras > 0 && totalBackendHoras === 0
-                          ? 2
-                          : 1
-                      "
-                    >
-                      {{ totalCalculoFrontend }} Hs.
-                    </td>
-                  </ng-container>
-                  <td class="px-4 py-2 border text-right">
-                    {{ totalCalculoBackend + totalCalculoFrontend }} Hs.
-                  </td>
-                </tr>
-                <tr class="font-bold bg-gray-200">
-                  <td colspan="3" class="px-4 py-2 border text-left">
-                    Total Estimación
-                  </td>
-                  <td class="px-4 py-2 border text-right">
-                    {{
-                      totalBackendHoras +
-                        totalFrontendHoras +
-                        totalCalculoBackend +
-                        totalCalculoFrontend
-                    }}
-                    Hs.
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </ng-container>
-        </div>
+        </ng-container>
       </div>
     </div>
   </div>

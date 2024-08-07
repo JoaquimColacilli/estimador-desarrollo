@@ -148,3 +148,21 @@ input:checked + label .block {
 .w-400px {
   width: 400px;
 }
+
+.dragging .bg-white {
+  background-color: #f0f8ff; /* Cambia el fondo del modal cuando se arrastra un archivo */
+  border-color: #007acc; /* Cambia el borde cuando se arrastra un archivo */
+}
+
+.dragging .border-dashed {
+  border-color: #007acc; /* Cambia el borde del área de arrastre */
+}
+
+.scale-105 {
+  transform: scale(1.05);
+  transition: transform 0.2s ease-in-out;
+}
+
+.border-4 {
+  border-width: 4px;
+}

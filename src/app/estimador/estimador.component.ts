@@ -1,4 +1,10 @@
-import { Component, Inject, OnInit, PLATFORM_ID } from '@angular/core';
+import {
+  Component,
+  Inject,
+  OnInit,
+  PLATFORM_ID,
+  HostListener,
+} from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EstimadorService } from '../service/estimador.service';
@@ -7,6 +13,9 @@ import { ChartData, ChartType } from 'chart.js';
 import { CommonModule } from '@angular/common';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { getDocument, GlobalWorkerOptions, version } from 'pdfjs-dist';
+
+GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/pdf.worker.min.mjs`;
 
 let html2pdf: any;
 
@@ -179,6 +188,11 @@ export class EstimadorComponent implements OnInit {
   microservicesBackend: string[] = [];
   microservicesFrontend: string[] = [];
   currentDate: string = '';
+  showUploadModal = false;
+  selectedFile: File | null = null;
+  isDragging = false;
+  uploadedFile: File | null = null;
+
   private tempMicroservicesBackend: string[] = [];
   private tempMicroservicesFrontend: string[] = [];
   public pieChartLabels: string[] = [
@@ -209,6 +223,22 @@ export class EstimadorComponent implements OnInit {
         html2pdf = module.default;
       });
     }
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  unloadNotification($event: any): void {
+    if (this.shouldWarnOnExit()) {
+      $event.returnValue = true;
+    }
+  }
+
+  shouldWarnOnExit(): boolean {
+    return (
+      (this.desarrolloHoras !== null && this.desarrolloHoras > 0) ||
+      (this.frontendHoras !== null && this.frontendHoras > 0) ||
+      this.tareas.length > 0 ||
+      this.tareasFrontend.length > 0
+    );
   }
 
   resetTareaFields(type: 'backend' | 'frontend') {
@@ -397,7 +427,7 @@ export class EstimadorComponent implements OnInit {
 
       autoTable(doc, {
         startY: currentY,
-        head: [['Cálculo', 'Backend', 'Frontend', 'Total']],
+        head: [['Análisis', 'Backend', 'Frontend', 'Total']],
         body: [
           ...this.camposEstimacionBackend.map((campo) => [
             campo.label,
@@ -410,7 +440,7 @@ export class EstimadorComponent implements OnInit {
           ]),
           // Fila de Total Cálculo
           [
-            'Total Cálculo:',
+            'Total Análisis:',
             '',
             '',
             `${this.totalCalculoBackend + this.totalCalculoFrontend} Hs.`,
@@ -432,7 +462,7 @@ export class EstimadorComponent implements OnInit {
 
       autoTable(doc, {
         startY: currentY,
-        head: [['Desarrollo / Cálculo', 'Backend', 'Frontend', 'Total']],
+        head: [['Desarrollo / Análisis', 'Backend', 'Frontend', 'Total']],
         body: [
           [
             'Desarrollo',
@@ -441,7 +471,7 @@ export class EstimadorComponent implements OnInit {
             `${this.totalBackendHoras + this.totalFrontendHoras} Hs.`,
           ],
           [
-            'Cálculo Análisis',
+            'Análisis',
             `${this.totalCalculoBackend} Hs.`,
             `${this.totalCalculoFrontend} Hs.`,
             `${this.totalCalculoBackend + this.totalCalculoFrontend} Hs.`,
@@ -935,5 +965,111 @@ export class EstimadorComponent implements OnInit {
         this.showMicroservicesModalFrontend = false; // Cierra el modal después de guardar
       }
     }
+  }
+
+  openUploadModal(): void {
+    this.showUploadModal = true;
+  }
+
+  // closeUploadModal(): void {
+  //   this.showUploadModal = false;
+  //   this.selectedFile = null;
+  // }
+
+  // onDragOver(event: DragEvent): void {
+  //   event.preventDefault();
+  //   event.stopPropagation();
+  // }
+
+  // onDragLeave(event: DragEvent): void {
+  //   event.preventDefault();
+  //   event.stopPropagation();
+  // }
+
+  // onDrop(event: DragEvent): void {
+  //   event.preventDefault();
+  //   event.stopPropagation();
+
+  //   const file = event.dataTransfer?.files[0];
+  //   if (file && file.type === 'application/pdf') {
+  //     this.selectedFile = file;
+  //   } else {
+  //     alert('Solo se aceptan archivos PDF');
+  //   }
+  // }
+
+  onFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file && file.type === 'application/pdf') {
+      this.selectedFile = file;
+    } else {
+      alert('Solo se aceptan archivos PDF');
+    }
+  }
+
+  uploadFile(): void {
+    if (this.uploadedFile) {
+      const reader = new FileReader();
+      reader.onload = async (e: any) => {
+        const arrayBuffer = e.target.result;
+        const typedArray = new Uint8Array(arrayBuffer);
+
+        const pdfDoc = await getDocument(typedArray).promise;
+
+        let pdfText = '';
+        for (let i = 1; i <= pdfDoc.numPages; i++) {
+          const page = await pdfDoc.getPage(i);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items
+            .map((item) => {
+              if ((item as any).str) {
+                return (item as any).str;
+              }
+              return '';
+            })
+            .join(' ');
+          pdfText += `Page ${i}: ${pageText}\n`;
+        }
+
+        console.log('Texto del PDF:', pdfText);
+        this.closeUploadModal();
+      };
+
+      reader.readAsArrayBuffer(this.uploadedFile);
+    }
+  }
+
+  onDragOver(event: DragEvent) {
+    event.preventDefault();
+    this.isDragging = true;
+  }
+
+  onDragLeave(event: DragEvent) {
+    event.preventDefault();
+    this.isDragging = false;
+  }
+
+  onDrop(event: DragEvent) {
+    event.preventDefault();
+    this.isDragging = false;
+
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      this.uploadedFile = files[0];
+      // Lógica para manejar el archivo subido
+    }
+  }
+
+  handleFileInput(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.uploadedFile = input.files[0];
+    }
+  }
+
+  closeUploadModal() {
+    this.isDragging = false;
+    this.uploadedFile = null;
+    this.showUploadModal = false;
   }
 }
