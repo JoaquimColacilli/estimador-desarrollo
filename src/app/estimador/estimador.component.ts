@@ -1035,7 +1035,11 @@ export class EstimadorComponent implements OnInit {
         const parsedData = this.parsePDFText(pdfText);
         console.log('Datos Parseados:', parsedData);
 
-        // Asignar los datos parseados a las variables correspondientes
+        // Inicializar variables
+        this.frontendHoras = null;
+        this.desarrolloHoras = null;
+
+        // Procesar y asignar datos del proyecto y cambios
         if (parsedData.estimacion) {
           this.formData.tituloDocumento = parsedData.estimacion.titulo || '';
         }
@@ -1051,7 +1055,38 @@ export class EstimadorComponent implements OnInit {
             parsedData.registroCambios[0].causaDelCambio || '';
         }
 
-        if (parsedData.resumenTareasCalculos) {
+        // Procesar Tareas Frontend
+        if (parsedData.resumenTareasCalculos?.tareasFrontend) {
+          this.tareasFrontend =
+            parsedData.resumenTareasCalculos.tareasFrontend.map((t: any) => ({
+              nombre: t.tarea,
+              horas: parseInt(t.horas.replace(' Hs.', '')),
+              microservice: t.microservicio,
+            }));
+
+          if (this.tareasFrontend.length > 0) {
+            this.frontendHoras = null; // Asegurar que frontendHoras es null si hay tareas
+            this.showFrontend = true;
+            this.showFrontendTareasCard = true;
+          }
+        }
+
+        // Procesar Total Frontend si no hay tareas
+        if (
+          !this.tareasFrontend?.length &&
+          parsedData.resumenTareasCalculos?.totalFrontend
+        ) {
+          this.frontendHoras = parseInt(
+            parsedData.resumenTareasCalculos.totalFrontend.replace(' Hs.', '')
+          );
+          if (this.frontendHoras > 0) {
+            this.showFrontend = true;
+            this.showFrontendTareasCard = true;
+          }
+        }
+
+        // Procesar Tareas Backend
+        if (parsedData.resumenTareasCalculos?.tareas) {
           this.tareas = parsedData.resumenTareasCalculos.tareas.map(
             (t: any) => ({
               nombre: t.tarea,
@@ -1060,23 +1095,26 @@ export class EstimadorComponent implements OnInit {
             })
           );
 
-          // Asignar horas de backend
+          if (this.tareas.length > 0) {
+            this.desarrolloHoras = null; // Asegurar que desarrolloHoras es null si hay tareas
+            this.showTareasCard = true;
+          }
+        }
+
+        // Procesar Total Backend si no hay tareas
+        if (
+          !this.tareas?.length &&
+          parsedData.resumenTareasCalculos?.totalBackend
+        ) {
           this.desarrolloHoras = parseInt(
             parsedData.resumenTareasCalculos.totalBackend.replace(' Hs.', '')
           );
+          if (this.desarrolloHoras > 0) {
+            this.showTareasCard = true;
+          }
         }
 
-        if (this.tareas.length > 0) {
-          this.showTareasCard = true;
-          // No asignar desarrolloHoras si hay tareas
-          this.desarrolloHoras = null;
-        } else {
-          // Asignar horas de backend solo si no hay tareas
-          this.desarrolloHoras = parseInt(
-            parsedData.resumenTareasCalculos.totalBackend.replace(' Hs.', '')
-          );
-        }
-
+        // Procesar Análisis
         if (parsedData.calculoAnalisis) {
           this.camposEstimacionBackend.forEach((campo) => {
             const analisis = parsedData.calculoAnalisis.analisis.find(
@@ -1088,10 +1126,14 @@ export class EstimadorComponent implements OnInit {
           });
         }
 
+        // Procesar Desarrollo/Análisis
         if (parsedData.desarrolloAnalisis) {
           parsedData.desarrolloAnalisis.desarrollo.forEach((d: any) => {
             if (d.tipo === 'Desarrollo') {
-              this.frontendHoras = parseInt(d.frontend.replace(' Hs.', ''));
+              // Solo asignar a frontendHoras si no hay tareas de frontend
+              if (!this.tareasFrontend || this.tareasFrontend.length === 0) {
+                this.frontendHoras = parseInt(d.frontend.replace(' Hs.', ''));
+              }
             }
           });
 
@@ -1192,6 +1234,34 @@ export class EstimadorComponent implements OnInit {
           totalBackend: backendTasksMatch[2].trim(),
         }
       : null;
+
+    const frontendTasksMatch = pdfText.match(
+      /Tarea\s+Microservicio\s+Horas\s+([\s\S]+?)Total Frontend\s+([\d]+\s+Hs.)/
+    );
+    if (frontendTasksMatch) {
+      result.resumenTareasCalculos = result.resumenTareasCalculos || {};
+      result.resumenTareasCalculos.tareasFrontend = frontendTasksMatch[1]
+        .split(/(\d+\s+Hs\.)/) // Dividir por cada ocurrencia de "XX Hs."
+        .reduce(
+          (acc: any[], current: string, index: number, array: string[]) => {
+            if (index % 2 === 0) {
+              const taskLine = current.trim();
+              const taskMatch = taskLine.match(/^(.+?)\s{2,}([\w\s]+)$/);
+              if (taskMatch) {
+                acc.push({
+                  tarea: taskMatch[1].trim(),
+                  microservicio: taskMatch[2].trim(),
+                  horas: array[index + 1].trim(), // El siguiente elemento es las horas
+                });
+              }
+            }
+            return acc;
+          },
+          []
+        )
+        .filter((task) => task !== null);
+      result.resumenTareasCalculos.totalFrontend = frontendTasksMatch[2].trim();
+    }
 
     // Ajuste para capturar la sección de Análisis
     const analisisSectionMatch = pdfText.match(
