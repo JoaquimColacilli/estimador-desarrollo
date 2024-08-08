@@ -1032,61 +1032,23 @@ export class EstimadorComponent implements OnInit {
         }
 
         console.log('Texto del PDF:', pdfText);
-        const parsedData = this.parsePDFText(pdfText);
+        const parsedData =
+          pdfText.includes('Total Backend') &&
+          pdfText.includes('Total Frontend')
+            ? this.parsePDFTextWithBackendAndFrontend(pdfText)
+            : this.parsePDFText(pdfText);
+
         console.log('Datos Parseados:', parsedData);
 
-        // Inicializar variables
+        // Limpiar variables de horas antes de asignar nuevas tareas y horas
         this.frontendHoras = null;
         this.desarrolloHoras = null;
 
-        // Procesar y asignar datos del proyecto y cambios
-        if (parsedData.estimacion) {
-          this.formData.tituloDocumento = parsedData.estimacion.titulo || '';
-        }
-
-        if (parsedData.projectInfo) {
-          this.formData.proyecto = parsedData.projectInfo.proyecto || '';
-          this.formData.desarrolladores = [parsedData.projectInfo.autor || ''];
-          this.formData.descripcion = parsedData.projectInfo.descripcion || '';
-        }
-
-        if (parsedData.registroCambios.length > 0) {
-          this.formData.microservicioBackend =
-            parsedData.registroCambios[0].causaDelCambio || '';
-        }
-
-        // Procesar Tareas Frontend
-        if (parsedData.resumenTareasCalculos?.tareasFrontend) {
-          this.tareasFrontend =
-            parsedData.resumenTareasCalculos.tareasFrontend.map((t: any) => ({
-              nombre: t.tarea,
-              horas: parseInt(t.horas.replace(' Hs.', '')),
-              microservice: t.microservicio,
-            }));
-
-          if (this.tareasFrontend.length > 0) {
-            this.frontendHoras = null; // Asegurar que frontendHoras es null si hay tareas
-            this.showFrontend = true;
-            this.showFrontendTareasCard = true;
-          }
-        }
-
-        // Procesar Total Frontend si no hay tareas
+        // Manejar tareas de Backend
         if (
-          !this.tareasFrontend?.length &&
-          parsedData.resumenTareasCalculos?.totalFrontend
+          parsedData.resumenTareasCalculos.tareas &&
+          parsedData.resumenTareasCalculos.tareas.length > 0
         ) {
-          this.frontendHoras = parseInt(
-            parsedData.resumenTareasCalculos.totalFrontend.replace(' Hs.', '')
-          );
-          if (this.frontendHoras > 0) {
-            this.showFrontend = true;
-            this.showFrontendTareasCard = true;
-          }
-        }
-
-        // Procesar Tareas Backend
-        if (parsedData.resumenTareasCalculos?.tareas) {
           this.tareas = parsedData.resumenTareasCalculos.tareas.map(
             (t: any) => ({
               nombre: t.tarea,
@@ -1095,44 +1057,62 @@ export class EstimadorComponent implements OnInit {
             })
           );
 
-          if (this.tareas.length > 0) {
-            this.desarrolloHoras = null; // Asegurar que desarrolloHoras es null si hay tareas
-            this.showTareasCard = true;
-          }
+          this.showTareasCard = true;
+        } else {
+          this.showTareasCard = false;
         }
 
-        // Procesar Total Backend si no hay tareas
+        // Manejar tareas de Frontend
         if (
-          !this.tareas?.length &&
-          parsedData.resumenTareasCalculos?.totalBackend
+          parsedData.resumenTareasCalculos.tareasFrontend &&
+          parsedData.resumenTareasCalculos.tareasFrontend.length > 0
+        ) {
+          this.tareasFrontend =
+            parsedData.resumenTareasCalculos.tareasFrontend.map((t: any) => ({
+              nombre: t.tarea,
+              horas: parseInt(t.horas.replace(' Hs.', '')),
+              microservice: t.microservicio,
+            }));
+
+          this.showFrontendTareasCard = true;
+          this.showFrontend = true;
+        } else {
+          this.showFrontendTareasCard = false;
+          this.showFrontend = false;
+        }
+
+        // Asignar horas de Backend si no hay tareas
+        if (
+          !this.tareas.length &&
+          parsedData.resumenTareasCalculos.totalBackend
         ) {
           this.desarrolloHoras = parseInt(
             parsedData.resumenTareasCalculos.totalBackend.replace(' Hs.', '')
           );
-          if (this.desarrolloHoras > 0) {
-            this.showTareasCard = true;
-          }
+          this.showTareasCard = this.desarrolloHoras > 0;
         }
 
-        // Procesar Análisis
-        if (parsedData.calculoAnalisis) {
-          this.camposEstimacionBackend.forEach((campo) => {
-            const analisis = parsedData.calculoAnalisis.analisis.find(
-              (a: any) => a.tipo === campo.label
-            );
-            if (analisis) {
-              campo.horas = parseInt(analisis.backend.replace(' Hs.', ''));
-            }
-          });
+        // Asignar horas de Frontend si no hay tareas
+        if (
+          !this.tareasFrontend.length &&
+          parsedData.resumenTareasCalculos.totalFrontend
+        ) {
+          this.frontendHoras = parseInt(
+            parsedData.resumenTareasCalculos.totalFrontend.replace(' Hs.', '')
+          );
+          this.showFrontendTareasCard = this.frontendHoras > 0;
+          this.showFrontend = this.frontendHoras > 0;
         }
 
         // Procesar Desarrollo/Análisis
         if (parsedData.desarrolloAnalisis) {
           parsedData.desarrolloAnalisis.desarrollo.forEach((d: any) => {
             if (d.tipo === 'Desarrollo') {
-              // Solo asignar a frontendHoras si no hay tareas de frontend
-              if (!this.tareasFrontend || this.tareasFrontend.length === 0) {
+              if (!this.tareasFrontend.length) {
                 this.frontendHoras = parseInt(d.frontend.replace(' Hs.', ''));
+              }
+              if (!this.tareas.length) {
+                this.desarrolloHoras = parseInt(d.backend.replace(' Hs.', ''));
               }
             }
           });
@@ -1152,7 +1132,6 @@ export class EstimadorComponent implements OnInit {
       reader.readAsArrayBuffer(this.uploadedFile);
     }
   }
-
   parsePDFText(pdfText: string): any {
     const result: any = {};
 
@@ -1205,42 +1184,16 @@ export class EstimadorComponent implements OnInit {
       result.registroCambios = [];
     }
 
-    // Extraer tareas y cálculos
+    // Extraer tareas y cálculos para Backend y Frontend
     const backendTasksMatch = pdfText.match(
       /Tarea\s+Microservicio\s+Horas\s+([\s\S]+?)Total Backend\s+([\d]+\s+Hs.)/
     );
-    result.resumenTareasCalculos = backendTasksMatch
-      ? {
-          tareas: backendTasksMatch[1]
-            .split(/(\d+\s+Hs\.)/) // Dividir por cada ocurrencia de "XX Hs."
-            .reduce(
-              (acc: any[], current: string, index: number, array: string[]) => {
-                if (index % 2 === 0) {
-                  const taskLine = current.trim();
-                  const taskMatch = taskLine.match(/^(.+?)\s{2,}([\w\s]+)$/);
-                  if (taskMatch) {
-                    acc.push({
-                      tarea: taskMatch[1].trim(),
-                      microservicio: taskMatch[2].trim(),
-                      horas: array[index + 1].trim(), // El siguiente elemento es las horas
-                    });
-                  }
-                }
-                return acc;
-              },
-              []
-            )
-            .filter((task) => task !== null),
-          totalBackend: backendTasksMatch[2].trim(),
-        }
-      : null;
-
     const frontendTasksMatch = pdfText.match(
       /Tarea\s+Microservicio\s+Horas\s+([\s\S]+?)Total Frontend\s+([\d]+\s+Hs.)/
     );
-    if (frontendTasksMatch) {
-      result.resumenTareasCalculos = result.resumenTareasCalculos || {};
-      result.resumenTareasCalculos.tareasFrontend = frontendTasksMatch[1]
+
+    if (backendTasksMatch) {
+      const backendTasks = backendTasksMatch[1]
         .split(/(\d+\s+Hs\.)/) // Dividir por cada ocurrencia de "XX Hs."
         .reduce(
           (acc: any[], current: string, index: number, array: string[]) => {
@@ -1260,72 +1213,215 @@ export class EstimadorComponent implements OnInit {
           []
         )
         .filter((task) => task !== null);
+
+      // Verificar si todos los microservicios son iguales
+      const allBackendMicroservicesSame = backendTasks.every(
+        (task) => task?.microservicio === backendTasks[0]?.microservicio
+      );
+
+      const parsedBackendTasks = allBackendMicroservicesSame
+        ? backendTasks.map(({ microservicio, ...rest }) => rest)
+        : backendTasks;
+
+      result.resumenTareasCalculos = {
+        tareas: parsedBackendTasks,
+        totalBackend: backendTasksMatch[2].trim(),
+      };
+    }
+
+    if (frontendTasksMatch) {
+      const frontendTasks = frontendTasksMatch[1]
+        .split(/(\d+\s+Hs\.)/) // Dividir por cada ocurrencia de "XX Hs."
+        .reduce(
+          (acc: any[], current: string, index: number, array: string[]) => {
+            if (index % 2 === 0) {
+              const taskLine = current.trim();
+              const taskMatch = taskLine.match(/^(.+?)\s{2,}([\w\s]+)$/);
+              if (taskMatch) {
+                acc.push({
+                  tarea: taskMatch[1].trim(),
+                  microservicio: taskMatch[2].trim(),
+                  horas: array[index + 1].trim(), // El siguiente elemento es las horas
+                });
+              }
+            }
+            return acc;
+          },
+          []
+        )
+        .filter((task) => task !== null);
+
+      // Verificar si todos los microservicios son iguales
+      const allFrontendMicroservicesSame = frontendTasks.every(
+        (task) => task?.microservicio === frontendTasks[0]?.microservicio
+      );
+
+      const parsedFrontendTasks = allFrontendMicroservicesSame
+        ? frontendTasks.map(({ microservicio, ...rest }) => rest)
+        : frontendTasks;
+
+      if (!result.resumenTareasCalculos) {
+        result.resumenTareasCalculos = {};
+      }
+
+      result.resumenTareasCalculos.tareasFrontend = parsedFrontendTasks;
       result.resumenTareasCalculos.totalFrontend = frontendTasksMatch[2].trim();
     }
 
-    // Ajuste para capturar la sección de Análisis
-    const analisisSectionMatch = pdfText.match(
-      /Análisis\s+Backend\s+Frontend\s+Total\s+([\s\S]+?)Total\s+Análisis:\s+(\d+\s+Hs.)/
-    );
+    return result;
+  }
 
-    console.log('analisisSectionMatch:', analisisSectionMatch); // Verificar si ahora se captura
+  // Tareas back y tareas front
 
-    if (analisisSectionMatch) {
-      // Dividir la línea en análisis individuales
-      const analisisItems =
-        analisisSectionMatch[1].match(
-          /.+?\s+\d+\s+Hs.\s+\d+\s+Hs.\s+\d+\s+Hs./g
-        ) || [];
+  parsePDFTextWithBackendAndFrontend(pdfText: string): any {
+    const result: any = {};
 
-      console.log('analisisItems:', analisisItems); // Verificar las líneas de análisis
-
-      result.calculoAnalisis = {
-        analisis: analisisItems
-          .map((item) => {
-            const itemMatch = item.match(
-              /(.+?)\s+(\d+\s+Hs.)\s+(\d+\s+Hs.)\s+(\d+\s+Hs.)/
-            );
-            return itemMatch
-              ? {
-                  tipo: itemMatch[1].trim(),
-                  backend: itemMatch[2].trim(),
-                  frontend: itemMatch[3].trim(),
-                  total: itemMatch[4].trim(),
-                }
-              : null;
-          })
-          .filter((item) => item !== null),
-        totalAnalisis: analisisSectionMatch[2].trim(),
-      };
-    } else {
-      result.calculoAnalisis = null;
-    }
-
-    // Extraer desarrollo / análisis
-    const desarrolloMatch = pdfText.match(
-      /Desarrollo\s+\/\s+Análisis\s+Backend\s+Frontend\s+Total\s+([\s\S]+?)Total Estimación\s+([\d]+\s+Hs.)/
-    );
-    result.desarrolloAnalisis = desarrolloMatch
+    // Extraer "APPSADE-49193 | Estimacion"
+    const estimationMatch = pdfText.match(/(\w+-\d+)\s+\|\s+(\w+)/);
+    result.estimacion = estimationMatch
       ? {
-          desarrollo: desarrolloMatch[1]
-            .match(/.+?\s+\d+\s+Hs.\s+\d+\s+Hs.\s+\d+\s+Hs./g)
-            ?.map((line) => {
-              const desarrolloTaskMatch = line.match(
-                /(.+?)\s+(\d+\s+Hs.)\s+(\d+\s+Hs.)\s+(\d+\s+Hs.)/
-              );
-              return desarrolloTaskMatch
-                ? {
-                    tipo: desarrolloTaskMatch[1].trim(),
-                    backend: desarrolloTaskMatch[2].trim(),
-                    frontend: desarrolloTaskMatch[3].trim(),
-                    total: desarrolloTaskMatch[4].trim(),
-                  }
-                : null;
-            })
-            .filter((desarrollo) => desarrollo !== null),
-          totalEstimacion: desarrolloMatch[2].trim(),
+          codigo: estimationMatch[1].trim(),
+          titulo: estimationMatch[2].trim(),
         }
       : null;
+
+    // Extraer información del proyecto
+    const projectInfoMatch = pdfText.match(
+      /Proyecto\s+([^\s]+)\s+Autor\s+([^\s]+)\s+Versión\s+([\d.]+)\s+Descripción\s+(.+?)\s+(Registro de Cambios|Resumen de Tareas y Cálculos)/
+    );
+    result.projectInfo = projectInfoMatch
+      ? {
+          proyecto: projectInfoMatch[1].trim(),
+          autor: projectInfoMatch[2].trim(),
+          version: projectInfoMatch[3].trim(),
+          descripcion: projectInfoMatch[4].trim(),
+        }
+      : null;
+
+    // Extraer registro de cambios
+    const changesSectionMatch = pdfText.match(
+      /Registro de Cambios\s+Versión\s+Causa del cambio\s+Responsable del cambio\s+Fecha del cambio\s+([\s\S]+?)(?:\n|Resumen de Tareas y Cálculos)/
+    );
+
+    if (changesSectionMatch) {
+      const changesLines = changesSectionMatch[1].split('\n').filter(Boolean);
+
+      result.registroCambios = changesLines
+        .map((line) => {
+          const changeMatch = line.match(
+            /(\d+\.\d+)\s+(.+?)\s+(\w+)\s+([\d/]+)/
+          );
+          return changeMatch
+            ? {
+                version: changeMatch[1].trim(),
+                causaDelCambio: changeMatch[2].trim(),
+                responsableDelCambio: changeMatch[3].trim(),
+                fechaDelCambio: changeMatch[4].trim(),
+              }
+            : null;
+        })
+        .filter((change) => change !== null);
+    } else {
+      result.registroCambios = [];
+    }
+
+    // Separar la sección de Backend y Frontend
+    const tasksMatch = pdfText.match(
+      /Resumen de Tareas y Cálculos\s+Tarea\s+Microservicio\s+Horas\s+([\s\S]+?)Total Backend\s+(\d+\s+Hs\.)\s+Tarea\s+Microservicio\s+Horas\s+([\s\S]+?)Total Frontend\s+(\d+\s+Hs\.)/
+    );
+
+    console.log('Tasks Match: ', tasksMatch); // Debug
+
+    if (tasksMatch) {
+      const backendSection = tasksMatch[1].trim();
+      const totalBackend = tasksMatch[2].trim();
+      const frontendSection = tasksMatch[3].trim();
+      const totalFrontend = tasksMatch[4].trim();
+
+      console.log('Backend Section: ', backendSection); // Debug
+      console.log('Frontend Section: ', frontendSection); // Debug
+
+      // Ajustar la extracción de tareas Backend
+      const backendTasks = backendSection
+        .split(/(?<=Hs\.)/) // Usar "Hs." como delimitador
+        .map((task) => {
+          const taskMatch = task
+            .trim()
+            .match(/(.+?)\s{2,}(.+?)\s+(\d+\s+Hs\.)$/);
+          console.log('Backend Task Match: ', taskMatch); // Debug
+          return taskMatch
+            ? {
+                tarea: taskMatch[1].trim(),
+                microservicio: taskMatch[2].trim(),
+                horas: taskMatch[3].trim(),
+              }
+            : null;
+        })
+        .filter((task) => task !== null);
+
+      // Verificar si todos los microservicios son iguales en Backend
+      const allBackendMicroservicesSame = backendTasks.every(
+        (task) => task?.microservicio === backendTasks[0]?.microservicio
+      );
+
+      const parsedBackendTasks = allBackendMicroservicesSame
+        ? backendTasks.map((task) => {
+            const { microservicio, ...rest } = task as {
+              tarea: string;
+              microservicio: string;
+              horas: string;
+            };
+            return rest;
+          })
+        : backendTasks;
+
+      console.log('Parsed Backend Tasks: ', parsedBackendTasks); // Debug
+
+      // Ajustar la extracción de tareas Frontend
+      const frontendTasks = frontendSection
+        .split(/(?<=Hs\.)/) // Usar "Hs." como delimitador
+        .map((task) => {
+          const taskMatch = task
+            .trim()
+            .match(/(.+?)\s{2,}(.+?)\s+(\d+\s+Hs\.)$/);
+          console.log('Frontend Task Match: ', taskMatch); // Debug
+          return taskMatch
+            ? {
+                tarea: taskMatch[1].trim(),
+                microservicio: taskMatch[2].trim(),
+                horas: taskMatch[3].trim(),
+              }
+            : null;
+        })
+        .filter((task) => task !== null);
+
+      // Verificar si todos los microservicios son iguales en Frontend
+      const allFrontendMicroservicesSame = frontendTasks.every(
+        (task) => task?.microservicio === frontendTasks[0]?.microservicio
+      );
+
+      const parsedFrontendTasks = allFrontendMicroservicesSame
+        ? frontendTasks.map((task) => {
+            const { microservicio, ...rest } = task as {
+              tarea: string;
+              microservicio: string;
+              horas: string;
+            };
+            return rest;
+          })
+        : frontendTasks;
+
+      console.log('Parsed Frontend Tasks: ', parsedFrontendTasks); // Debug
+
+      result.resumenTareasCalculos = {
+        tareas: parsedBackendTasks,
+        totalBackend,
+        tareasFrontend: parsedFrontendTasks,
+        totalFrontend,
+      };
+    } else {
+      console.log('Tasks Match Failed'); // Debug
+    }
 
     return result;
   }
