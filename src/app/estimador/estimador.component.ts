@@ -1032,20 +1032,40 @@ export class EstimadorComponent implements OnInit {
         }
 
         console.log('Texto del PDF:', pdfText);
-        const parsedData =
-          pdfText.includes('Total Backend') &&
-          pdfText.includes('Total Frontend')
-            ? this.parsePDFTextWithBackendAndFrontend(pdfText)
-            : this.parsePDFText(pdfText);
+        const parsedData = pdfText.includes('Horas de Desarrollo')
+          ? this.parsePDFTextWithoutTasks(pdfText)
+          : pdfText.includes('Total Backend') &&
+            pdfText.includes('Total Frontend')
+          ? this.parsePDFTextWithBackendAndFrontend(pdfText)
+          : this.parsePDFText(pdfText);
 
+        // Manejar horas de Backend si no hay tareas
+        if (parsedData.totalBackend) {
+          this.desarrolloHoras = parseInt(parsedData.totalBackend);
+          this.showTareasCard = this.desarrolloHoras > 0;
+          console.log(this.desarrolloHoras);
+        }
+
+        // Manejar horas de Frontend si no hay tareas
+        if (parsedData.totalFrontend) {
+          this.frontendHoras = parseInt(parsedData.totalFrontend);
+          this.showFrontendTareasCard = this.frontendHoras > 0;
+          if (!this.showFrontend) {
+            this.showFrontend = this.frontendHoras > 0;
+          }
+        }
+
+        console.log(parsedData.totalBackend);
+        console.log(parsedData.totalFrontend);
         console.log('Datos Parseados:', parsedData);
 
         // Limpiar variables de horas antes de asignar nuevas tareas y horas
-        this.frontendHoras = null;
-        this.desarrolloHoras = null;
+        // this.frontendHoras = null;
+        // this.desarrolloHoras = null;
 
         // Manejar tareas de Backend
         if (
+          parsedData.resumenTareasCalculos &&
           parsedData.resumenTareasCalculos.tareas &&
           parsedData.resumenTareasCalculos.tareas.length > 0
         ) {
@@ -1056,7 +1076,6 @@ export class EstimadorComponent implements OnInit {
               microservice: t.microservicio,
             })
           );
-
           this.showTareasCard = true;
         } else {
           this.showTareasCard = false;
@@ -1064,6 +1083,7 @@ export class EstimadorComponent implements OnInit {
 
         // Manejar tareas de Frontend
         if (
+          parsedData.resumenTareasCalculos &&
           parsedData.resumenTareasCalculos.tareasFrontend &&
           parsedData.resumenTareasCalculos.tareasFrontend.length > 0
         ) {
@@ -1073,35 +1093,13 @@ export class EstimadorComponent implements OnInit {
               horas: parseInt(t.horas.replace(' Hs.', '')),
               microservice: t.microservicio,
             }));
-
           this.showFrontendTareasCard = true;
           this.showFrontend = true;
         } else {
           this.showFrontendTareasCard = false;
-          this.showFrontend = false;
-        }
-
-        // Asignar horas de Backend si no hay tareas
-        if (
-          !this.tareas.length &&
-          parsedData.resumenTareasCalculos.totalBackend
-        ) {
-          this.desarrolloHoras = parseInt(
-            parsedData.resumenTareasCalculos.totalBackend.replace(' Hs.', '')
-          );
-          this.showTareasCard = this.desarrolloHoras > 0;
-        }
-
-        // Asignar horas de Frontend si no hay tareas
-        if (
-          !this.tareasFrontend.length &&
-          parsedData.resumenTareasCalculos.totalFrontend
-        ) {
-          this.frontendHoras = parseInt(
-            parsedData.resumenTareasCalculos.totalFrontend.replace(' Hs.', '')
-          );
-          this.showFrontendTareasCard = this.frontendHoras > 0;
-          this.showFrontend = this.frontendHoras > 0;
+          if (!this.frontendHoras) {
+            this.showFrontend = false;
+          }
         }
 
         // Procesar Desarrollo/Análisis
@@ -1132,6 +1130,7 @@ export class EstimadorComponent implements OnInit {
       reader.readAsArrayBuffer(this.uploadedFile);
     }
   }
+
   parsePDFText(pdfText: string): any {
     const result: any = {};
 
@@ -1422,6 +1421,27 @@ export class EstimadorComponent implements OnInit {
     } else {
       console.log('Tasks Match Failed'); // Debug
     }
+
+    return result;
+  }
+
+  //recuperar pdf que no tenga tareas
+  parsePDFTextWithoutTasks(pdfText: string): any {
+    const result: any = {};
+
+    // Extraer horas de desarrollo backend
+    const backendHoursMatch = pdfText.match(/Total Backend\s+(\d+)\s+Hs\./);
+    const frontendHoursMatch = pdfText.match(/Total Frontend\s+(\d+)\s+Hs\./);
+
+    if (backendHoursMatch) {
+      result.totalBackend = backendHoursMatch[1].trim(); // Solo el número
+    }
+
+    if (frontendHoursMatch) {
+      result.totalFrontend = frontendHoursMatch[1].trim(); // Solo el número
+    }
+
+    console.log(result);
 
     return result;
   }
