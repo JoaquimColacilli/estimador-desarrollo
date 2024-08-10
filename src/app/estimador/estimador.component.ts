@@ -1535,7 +1535,10 @@ export class EstimadorComponent implements OnInit {
     return result;
   }
 
-  parsePDFTextWithBackendHoursAndFrontendTasks(pdfText: string): any {
+  parsePDFTextWithBackendHoursAndFrontendTasks(
+    pdfText: string,
+    taskRegex?: RegExp
+  ): any {
     console.log('asd25');
     const result: any = {};
 
@@ -1556,15 +1559,20 @@ export class EstimadorComponent implements OnInit {
           (acc: any[], current: string, index: number, array: string[]) => {
             if (index % 2 === 0) {
               const taskLine = current.trim();
+              console.log('taskLine:', taskLine);
+
               // Filtrar las tareas que no corresponden a "Horas de Desarrollo"
               if (!taskLine.includes('Horas de Desarrollo Backend')) {
-                // Ajustar la expresión regular para capturar el nombre completo de la tarea
-                const taskMatch = taskLine.match(/^(.+?)\s{2,}(.+?)$/);
+                // Ajustar la expresión regular para capturar la tarea completa
+                const taskRegexToUse =
+                  taskRegex || /Tarea\s+.+?\s+Horas\s+(.+?)\s{2,}(.+?)$/;
+                const taskMatch = taskLine.match(taskRegexToUse);
+                console.log('taskMatch:', taskMatch);
+
                 if (taskMatch) {
-                  console.log(taskLine);
                   acc.push({
-                    tarea: taskMatch[1].trim(), // Captura completa del nombre de la tarea
-                    microservicio: taskMatch[2].trim(),
+                    tarea: taskMatch[1].trim(), // Captura el nombre completo de la tarea "Tarea Front 1"
+                    microservicio: taskMatch[2].trim(), // Captura el microservicio "Front"
                     horas: array[index + 1].trim(),
                   });
                 }
@@ -1595,6 +1603,7 @@ export class EstimadorComponent implements OnInit {
   parsePDFTextWithFrontendHoursAndBackendTasks(pdfText: string): any {
     const result: any = {};
     console.log('asd');
+
     // Extraer horas de desarrollo frontend
     const frontendHoursMatch = pdfText.match(/Total Frontend\s+(\d+\s+Hs\.)/);
     if (frontendHoursMatch) {
@@ -1606,27 +1615,36 @@ export class EstimadorComponent implements OnInit {
       /Tarea\s+Microservicio\s+Horas\s+([\s\S]+?)Total Backend\s+(\d+\s+Hs\.)/
     );
     if (backendTasksMatch) {
-      result.resumenTareasCalculos = {
-        tareas: backendTasksMatch[1]
-          .split(/(\d+\s+Hs\.)/)
-          .reduce(
-            (acc: any[], current: string, index: number, array: string[]) => {
-              if (index % 2 === 0) {
-                const taskLine = current.trim();
-                const taskMatch = taskLine.match(/^(.+?)\s{2,}([\w\s]+)$/);
-                if (taskMatch) {
-                  acc.push({
-                    tarea: taskMatch[1].trim(),
-                    microservicio: taskMatch[2].trim(),
-                    horas: array[index + 1].trim(),
-                  });
-                }
+      const tareas = backendTasksMatch[1]
+        .split(/(\d+\s+Hs\.)/)
+        .reduce(
+          (acc: any[], current: string, index: number, array: string[]) => {
+            if (index % 2 === 0) {
+              const taskLine = current.trim();
+              const taskMatch = taskLine.match(/^(.+?)\s{2,}([\w\s]+)$/);
+              if (taskMatch) {
+                acc.push({
+                  tarea: taskMatch[1].trim(),
+                  microservicio: taskMatch[2].trim(),
+                  horas: array[index + 1].trim(),
+                });
               }
-              return acc;
-            },
-            []
-          )
-          .filter((task) => task !== null),
+            }
+            return acc;
+          },
+          []
+        )
+        .filter((task) => task !== null);
+
+      // Verificar si todos los microservicios son iguales
+      const allBackendMicroservicesSame = tareas.every(
+        (task) => task.microservicio === tareas[0].microservicio
+      );
+
+      result.resumenTareasCalculos = {
+        tareas: allBackendMicroservicesSame
+          ? tareas.map(({ tarea, horas }) => ({ tarea, horas })) // Si todos son iguales, excluye el microservicio
+          : tareas,
         totalBackend: backendTasksMatch[2].trim(),
       };
     }
