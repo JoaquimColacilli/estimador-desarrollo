@@ -1084,6 +1084,7 @@ export class EstimadorComponent implements OnInit {
 
         // this.populateFormFromParsedData(parsedData);
 
+        this.fillFormWithExtractedData(pdfText);
         // Manejar horas de Backend si no hay tareas
         console.log(parsedData);
         if (parsedData.totalBackend) {
@@ -1758,5 +1759,55 @@ export class EstimadorComponent implements OnInit {
     this.isDragging = false;
     this.uploadedFile = null;
     this.showUploadModal = false;
+  }
+
+  extractDataFromPDF(pdfText: string): any {
+    const result: any = {};
+
+    // Localizar la posición de la palabra "Proyecto"
+    const projectStartIndex = pdfText.indexOf('Proyecto');
+
+    if (projectStartIndex !== -1) {
+      // Capturar el título que viene antes de "Proyecto"
+      result.tituloDocumento = pdfText
+        .substring(0, projectStartIndex)
+        .replace(/^Page \d+:\s*/, '')
+        .trim();
+
+      // Obtener el texto desde "Proyecto" hasta el final de la primera sección
+      const endOfSectionIndex =
+        pdfText.indexOf('Registro de Cambios') !== -1
+          ? pdfText.indexOf('Registro de Cambios')
+          : pdfText.indexOf('Resumen de Tareas y Cálculos');
+      const cleanedText = pdfText
+        .substring(projectStartIndex, endOfSectionIndex)
+        .trim();
+      console.log('Cleaned Text:', cleanedText);
+
+      // Dividir el texto en partes basadas en las palabras clave
+      const parts = cleanedText.split(/\s{2,}/); // Dividir por dos o más espacios
+      console.log('Parts:', parts);
+
+      // Asignar los valores correctos a las variables
+      if (parts.length >= 4) {
+        result.proyecto = parts[4] || ''; // "CADI"
+        result.nombreDesarrollador = parts[5] || ''; // "Joaquim Augusto Colacilli"
+        result.version = parts[6] || ''; // "1.0"
+        result.descripcion = parts.slice(7).join(' ') || ''; // "Descripcion para el PDF"
+      }
+    }
+
+    console.log('Result:', result);
+    return result;
+  }
+
+  fillFormWithExtractedData(pdfText: string): void {
+    const extractedData = this.extractDataFromPDF(pdfText);
+
+    this.formData.tituloDocumento = extractedData.tituloDocumento || '';
+    this.formData.proyecto = extractedData.proyecto || '';
+    this.formData.desarrolladores = [extractedData.nombreDesarrollador] || [''];
+    //this.formData.version = extractedData.version || '';
+    this.formData.descripcion = extractedData.descripcion || '';
   }
 }
