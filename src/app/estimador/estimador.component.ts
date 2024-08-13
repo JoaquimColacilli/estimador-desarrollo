@@ -315,7 +315,8 @@ export class EstimadorComponent implements OnInit {
       ],
     });
 
-    currentY += 1; // Incrementa manualmente la posición Y después de la tabla (ajustar según sea necesario)
+    // Obtener la nueva posición de Y después de la primera tabla
+    currentY = (doc as any).lastAutoTable.finalY + 0.25;
 
     // Registro de Cambios
     doc.setFontSize(14);
@@ -343,7 +344,7 @@ export class EstimadorComponent implements OnInit {
       ],
     });
 
-    currentY += 1; // Incrementa manualmente la posición Y después de la tabla (ajustar según sea necesario)
+    currentY = (doc as any).lastAutoTable.finalY + 0.25;
 
     // Salto de página para Resumen de Tareas y Cálculos
     doc.addPage();
@@ -356,7 +357,6 @@ export class EstimadorComponent implements OnInit {
     // Tablas de Backend
     if (this.totalBackendHoras > 0) {
       doc.setFontSize(12);
-      // doc.text('Backend', margin, currentY);
       currentY += 0.25;
 
       const backendTasks = this.tareas.map((t) => [
@@ -378,16 +378,15 @@ export class EstimadorComponent implements OnInit {
         head: [['Tarea', 'Microservicio', 'Horas']],
         body: backendTasks,
         margin: { left: margin },
-        styles: { fontSize: 10 }, // Ajusta el tamaño de fuente si quieres que las tablas sean más grandes
+        styles: { fontSize: 10 },
       });
 
-      currentY += 1; // Incrementa manualmente la posición Y después de la tabla (ajustar según sea necesario)
+      currentY = (doc as any).lastAutoTable.finalY + 0.25;
     }
 
     // Tablas de Frontend
     if (this.totalFrontendHoras > 0) {
       doc.setFontSize(12);
-      // doc.text('Frontend', margin, currentY);
       currentY += 0.25;
 
       const frontendTasks = this.tareasFrontend.map((t) => [
@@ -413,16 +412,15 @@ export class EstimadorComponent implements OnInit {
         head: [['Tarea', 'Microservicio', 'Horas']],
         body: frontendTasks,
         margin: { left: margin },
-        styles: { fontSize: 10 }, // Ajusta el tamaño de fuente si quieres que las tablas sean más grandes
+        styles: { fontSize: 10 },
       });
 
-      currentY += 1; // Incrementa manualmente la posición Y después de la tabla (ajustar según sea necesario)
+      currentY = (doc as any).lastAutoTable.finalY + 0.25;
     }
 
     // Cálculo Análisis
     if (this.totalCalculoBackend > 0 || this.totalCalculoFrontend > 0) {
       doc.setFontSize(14);
-      // doc.text('Cálculo Análisis', margin, currentY);
       currentY += 0.25;
 
       autoTable(doc, {
@@ -438,7 +436,6 @@ export class EstimadorComponent implements OnInit {
               this.estimaciones[campo.key + 'Front']
             } Hs.`,
           ]),
-          // Fila de Total Cálculo
           [
             'Total Análisis:',
             '',
@@ -450,15 +447,13 @@ export class EstimadorComponent implements OnInit {
         styles: { fontSize: 10 },
       });
 
-      console.log(this.camposEstimacionBackend);
-      currentY += 1; // Incrementa manualmente la posición Y después de la tabla (ajustar según sea necesario)
+      currentY = (doc as any).lastAutoTable.finalY + 0.25;
     }
 
     // Desarrollo / Cálculo
     if (this.totalBackendHoras > 0 || this.totalFrontendHoras > 0) {
       doc.setFontSize(14);
-      // doc.text('Desarrollo / Cálculo', margin, currentY);
-      currentY += 2;
+      currentY += 0.25;
 
       autoTable(doc, {
         startY: currentY,
@@ -496,6 +491,7 @@ export class EstimadorComponent implements OnInit {
     // Guardar el PDF
     doc.save(`${this.formData.tituloDocumento}.pdf`);
   }
+
   ngOnInit(): void {
     this.currentDate = new Date().toLocaleDateString();
   }
@@ -847,7 +843,6 @@ export class EstimadorComponent implements OnInit {
 
     if (isValid && isMicroserviceValid) {
       this.originalFormData = JSON.parse(JSON.stringify(this.formData));
-      console.log('Formulario enviado:', this.formData);
       this.closeFormModal();
     }
   }
@@ -936,10 +931,6 @@ export class EstimadorComponent implements OnInit {
       }
 
       if (isValid) {
-        console.log(
-          'Microservicios Backend guardados:',
-          this.microservicesBackend
-        );
         this.showMicroservicesModalBackend = false; // Cierra el modal después de guardar
       }
     } else if (type === 'frontend') {
@@ -958,10 +949,6 @@ export class EstimadorComponent implements OnInit {
       }
 
       if (isValid) {
-        console.log(
-          'Microservicios Frontend guardados:',
-          this.microservicesFrontend
-        );
         this.showMicroservicesModalFrontend = false; // Cierra el modal después de guardar
       }
     }
@@ -1031,8 +1018,6 @@ export class EstimadorComponent implements OnInit {
           pdfText += `Page ${i}: ${pageText}\n`;
         }
 
-        console.log('Texto del PDF:', pdfText);
-
         let parsedData: any;
         if (
           pdfText.includes('Horas de Desarrollo Backend') &&
@@ -1082,27 +1067,75 @@ export class EstimadorComponent implements OnInit {
           parsedData = this.parsePDFText(pdfText);
         }
 
-        // this.populateFormFromParsedData(parsedData);
+        console.log(pdfText);
+
+        const extractMicroservice = (
+          pdfText: string,
+          sectionType: 'Backend' | 'Frontend'
+        ): string | null => {
+          let regex: RegExp;
+
+          if (sectionType === 'Backend') {
+            // Casos donde Backend tiene solo horas o tareas con horas
+            regex = /Horas de Desarrollo Backend\s+([\s\S]+?)\d+\s+Hs\./;
+            const backendHoursMatch = pdfText.match(regex);
+            if (backendHoursMatch && backendHoursMatch[1].trim()) {
+              return backendHoursMatch[1].trim();
+            }
+
+            // Casos donde Backend tiene solo tareas
+            regex = /Tarea\s+Microservicio\s+Horas\s+([\s\S]+?)Total Backend/;
+            const backendTaskMatch = pdfText.match(regex);
+            if (backendTaskMatch && backendTaskMatch[1].trim()) {
+              const lines = backendTaskMatch[1].split('\n');
+              return lines.length > 0 ? lines[0].split(/\s{2,}/)[1] : null;
+            }
+          } else {
+            // Casos donde Frontend tiene solo horas o tareas con horas
+            regex = /Horas de Desarrollo Frontend\s+([\s\S]+?)\d+\s+Hs\./;
+            const frontendHoursMatch = pdfText.match(regex);
+            if (frontendHoursMatch && frontendHoursMatch[1].trim()) {
+              return frontendHoursMatch[1].trim();
+            }
+
+            // Casos donde Frontend tiene solo tareas
+            regex = /Tarea\s+Microservicio\s+Horas\s+([\s\S]+?)Total Frontend/;
+            const frontendTaskMatch = pdfText.match(regex);
+            if (frontendTaskMatch && frontendTaskMatch[1].trim()) {
+              const lines = frontendTaskMatch[1].split('\n');
+              return lines.length > 0 ? lines[0].split(/\s{2,}/)[1] : null;
+            }
+          }
+
+          return null;
+        };
+
+        // Uso de la función para Backend
+        const backendMicroservice = extractMicroservice(pdfText, 'Backend');
+        if (backendMicroservice) {
+          this.formData.microservicioBackend = backendMicroservice;
+          console.log('Microservicio Backend:', backendMicroservice);
+        }
+
+        // Uso de la función para Frontend
+        const frontendMicroservice = extractMicroservice(pdfText, 'Frontend');
+        if (frontendMicroservice) {
+          this.formData.microservicioFrontend = frontendMicroservice;
+          console.log('Microservicio Frontend:', frontendMicroservice);
+        }
 
         this.fillFormWithExtractedData(pdfText);
         // Manejar horas de Backend si no hay tareas
-        console.log(parsedData);
         if (parsedData.totalBackend) {
           this.desarrolloHoras = parseInt(parsedData.totalBackend);
           this.showTareasCard = this.desarrolloHoras > 0;
-          console.log('Horas de Backend:', this.desarrolloHoras);
         }
 
         if (parsedData.totalFrontend) {
           this.frontendHoras = parseInt(parsedData.totalFrontend);
           this.showFrontendTareasCard = this.frontendHoras > 0;
           this.showFrontend = this.frontendHoras > 0;
-          console.log('Horas de Frontend:', this.frontendHoras);
         }
-
-        console.log(parsedData.totalBackend);
-        console.log(parsedData.totalFrontend);
-        console.log('Datos Parseados:', parsedData);
 
         // Manejar tareas de Backend
         if (
@@ -1323,7 +1356,6 @@ export class EstimadorComponent implements OnInit {
       this.desarrolloHoras = null;
     }
     const result: any = {};
-    console.log('asd2');
     // Extraer "APPSADE-49193 | Estimacion"
     const estimationMatch = pdfText.match(/(\w+-\d+)\s+\|\s+(\w+)/);
     result.estimacion = estimationMatch
@@ -1378,16 +1410,11 @@ export class EstimadorComponent implements OnInit {
       /Resumen de Tareas y Cálculos\s+Tarea\s+Microservicio\s+Horas\s+([\s\S]+?)Total Backend\s+(\d+\s+Hs\.)\s+Tarea\s+Microservicio\s+Horas\s+([\s\S]+?)Total Frontend\s+(\d+\s+Hs\.)/
     );
 
-    console.log('Tasks Match: ', tasksMatch); // Debug
-
     if (tasksMatch) {
       const backendSection = tasksMatch[1].trim();
       const totalBackend = tasksMatch[2].trim();
       const frontendSection = tasksMatch[3].trim();
       const totalFrontend = tasksMatch[4].trim();
-
-      console.log('Backend Section: ', backendSection); // Debug
-      console.log('Frontend Section: ', frontendSection); // Debug
 
       // Ajustar la extracción de tareas Backend
       const backendTasks = backendSection
@@ -1396,7 +1423,6 @@ export class EstimadorComponent implements OnInit {
           const taskMatch = task
             .trim()
             .match(/(.+?)\s{2,}(.+?)\s+(\d+\s+Hs\.)$/);
-          console.log('Backend Task Match: ', taskMatch); // Debug
           return taskMatch
             ? {
                 tarea: taskMatch[1].trim(),
@@ -1423,8 +1449,6 @@ export class EstimadorComponent implements OnInit {
           })
         : backendTasks;
 
-      console.log('Parsed Backend Tasks: ', parsedBackendTasks); // Debug
-
       // Ajustar la extracción de tareas Frontend
       const frontendTasks = frontendSection
         .split(/(?<=Hs\.)/) // Usar "Hs." como delimitador
@@ -1432,7 +1456,6 @@ export class EstimadorComponent implements OnInit {
           const taskMatch = task
             .trim()
             .match(/(.+?)\s{2,}(.+?)\s+(\d+\s+Hs\.)$/);
-          console.log('Frontend Task Match: ', taskMatch); // Debug
           return taskMatch
             ? {
                 tarea: taskMatch[1].trim(),
@@ -1459,8 +1482,6 @@ export class EstimadorComponent implements OnInit {
           })
         : frontendTasks;
 
-      console.log('Parsed Frontend Tasks: ', parsedFrontendTasks); // Debug
-
       result.resumenTareasCalculos = {
         tareas: parsedBackendTasks,
         totalBackend,
@@ -1468,7 +1489,6 @@ export class EstimadorComponent implements OnInit {
         totalFrontend,
       };
     } else {
-      console.log('Tasks Match Failed'); // Debug
     }
 
     return result;
@@ -1493,8 +1513,6 @@ export class EstimadorComponent implements OnInit {
       result.totalFrontend = frontendHoursMatch[1].trim(); // Solo el número
     }
 
-    console.log(result);
-
     return result;
   }
 
@@ -1511,8 +1529,6 @@ export class EstimadorComponent implements OnInit {
       result.totalBackend = backendHoursMatch[1].trim(); // Solo el número
       result.totalFrontend = null;
     }
-
-    console.log(result);
 
     return result;
   }
@@ -1531,8 +1547,6 @@ export class EstimadorComponent implements OnInit {
       result.totalBackend = null;
     }
 
-    console.log(result);
-
     return result;
   }
 
@@ -1540,7 +1554,6 @@ export class EstimadorComponent implements OnInit {
     pdfText: string,
     taskRegex?: RegExp
   ): any {
-    console.log('asd25');
     const result: any = {};
 
     // Extraer horas de desarrollo backend
@@ -1560,7 +1573,6 @@ export class EstimadorComponent implements OnInit {
           (acc: any[], current: string, index: number, array: string[]) => {
             if (index % 2 === 0) {
               const taskLine = current.trim();
-              console.log('taskLine:', taskLine);
 
               // Filtrar las tareas que no corresponden a "Horas de Desarrollo"
               if (!taskLine.includes('Horas de Desarrollo Backend')) {
@@ -1568,7 +1580,6 @@ export class EstimadorComponent implements OnInit {
                 const taskRegexToUse =
                   taskRegex || /Tarea\s+.+?\s+Horas\s+(.+?)\s{2,}(.+?)$/;
                 const taskMatch = taskLine.match(taskRegexToUse);
-                console.log('taskMatch:', taskMatch);
 
                 if (taskMatch) {
                   acc.push({
@@ -1603,7 +1614,6 @@ export class EstimadorComponent implements OnInit {
 
   parsePDFTextWithFrontendHoursAndBackendTasks(pdfText: string): any {
     const result: any = {};
-    console.log('asd');
 
     // Extraer horas de desarrollo frontend
     const frontendHoursMatch = pdfText.match(/Total Frontend\s+(\d+\s+Hs\.)/);
@@ -1652,80 +1662,6 @@ export class EstimadorComponent implements OnInit {
 
     return result;
   }
-
-  // Función para rellenar el formulario con los datos extraídos del PDF
-  // populateFormFromParsedData(parsedData: any): void {
-  //   // Rellenar Título Documento con el nombre del PDF sin la extensión ".pdf"
-  //   if (this.uploadedFile) {
-  //     this.formData.tituloDocumento = this.uploadedFile.name.replace(
-  //       '.pdf',
-  //       ''
-  //     );
-  //   }
-
-  //   // Verificar y mostrar los datos extraídos para depuración
-  //   console.log('Datos de projectInfo:', parsedData.projectInfo);
-  //   console.log(
-  //     'Datos de resumenTareasCalculos:',
-  //     parsedData.resumenTareasCalculos
-  //   );
-
-  //   // Rellenar Proyecto, Autor y Descripción
-  //   if (parsedData.projectInfo) {
-  //     this.formData.proyecto = parsedData.projectInfo.proyecto || '';
-  //     this.formData.desarrolladores = [parsedData.projectInfo.autor || ''];
-  //     this.formData.descripcion = parsedData.projectInfo.descripcion || '';
-  //   }
-
-  //   console.log(
-  //     'Formulario después de rellenar Proyecto, Autor y Descripción:',
-  //     this.formData
-  //   );
-
-  //   // Rellenar Microservicios Backend
-  //   if (
-  //     parsedData.resumenTareasCalculos &&
-  //     parsedData.resumenTareasCalculos.tareas &&
-  //     parsedData.resumenTareasCalculos.tareas.length > 0
-  //   ) {
-  //     const backendMicroservices = parsedData.resumenTareasCalculos.tareas.map(
-  //       (t: any) => t.microservicio
-  //     );
-  //     const uniqueBackendMicroservices = Array.from(
-  //       new Set(backendMicroservices)
-  //     );
-
-  //     if (uniqueBackendMicroservices.length === 1) {
-  //       this.formData.microservicioBackend =
-  //         uniqueBackendMicroservices[0] as string;
-  //     }
-  //   }
-
-  //   // Rellenar Microservicios Frontend
-  //   if (
-  //     parsedData.resumenTareasCalculos &&
-  //     parsedData.resumenTareasCalculos.tareasFrontend &&
-  //     parsedData.resumenTareasCalculos.tareasFrontend.length > 0
-  //   ) {
-  //     const frontendMicroservices =
-  //       parsedData.resumenTareasCalculos.tareasFrontend.map(
-  //         (t: any) => t.microservicio
-  //       );
-  //     const uniqueFrontendMicroservices = Array.from(
-  //       new Set(frontendMicroservices)
-  //     );
-
-  //     if (uniqueFrontendMicroservices.length === 1) {
-  //       this.formData.microservicioFrontend =
-  //         uniqueFrontendMicroservices[0] as string;
-  //     }
-  //   }
-
-  //   console.log(
-  //     'Formulario después de rellenar Microservicios:',
-  //     this.formData
-  //   );
-  // }
 
   onDragOver(event: DragEvent) {
     event.preventDefault();
@@ -1782,11 +1718,9 @@ export class EstimadorComponent implements OnInit {
       const cleanedText = pdfText
         .substring(projectStartIndex, endOfSectionIndex)
         .trim();
-      console.log('Cleaned Text:', cleanedText);
 
       // Dividir el texto en partes basadas en las palabras clave
       const parts = cleanedText.split(/\s{2,}/); // Dividir por dos o más espacios
-      console.log('Parts:', parts);
 
       // Asignar los valores correctos a las variables
       if (parts.length >= 4) {
@@ -1797,7 +1731,6 @@ export class EstimadorComponent implements OnInit {
       }
     }
 
-    console.log('Result:', result);
     return result;
   }
 
