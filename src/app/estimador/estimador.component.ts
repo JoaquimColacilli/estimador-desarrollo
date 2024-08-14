@@ -1069,60 +1069,63 @@ export class EstimadorComponent implements OnInit {
 
         console.log(pdfText);
 
-        const extractMicroservice = (
-          pdfText: string,
-          sectionType: 'Backend' | 'Frontend'
-        ): string | null => {
-          let regex: RegExp;
+        // const extractMicroservice = (
+        //   pdfText: string,
+        //   sectionType: 'Backend' | 'Frontend'
+        // ): string | null => {
+        //   let regex: RegExp;
 
-          if (sectionType === 'Backend') {
-            // Casos donde Backend tiene solo horas o tareas con horas
-            regex = /Horas de Desarrollo Backend\s+([\s\S]+?)\d+\s+Hs\./;
-            const backendHoursMatch = pdfText.match(regex);
-            if (backendHoursMatch && backendHoursMatch[1].trim()) {
-              return backendHoursMatch[1].trim();
-            }
+        //   if (sectionType === 'Backend') {
+        //     // Casos donde Backend tiene solo horas o tareas con horas
+        //     regex = /Tarea\s+Microservicio\s+Horas\s+([\s\S]+?)Total Backend/;
+        //     const backendTaskMatch = pdfText.match(regex);
+        //     if (backendTaskMatch && backendTaskMatch[1].trim()) {
+        //       const backendSection = backendTaskMatch[1].trim();
+        //       const backendMicroserviceMatch = backendSection.match(
+        //         /(?:Tarea\s+[^\s]+\s+)?([^\s]+)\s+\d+\s+Hs\./
+        //       );
+        //       return backendMicroserviceMatch
+        //         ? backendMicroserviceMatch[1].trim()
+        //         : null;
+        //     }
+        //   } else {
+        //     // Casos donde Frontend tiene solo horas o tareas con horas
+        //     regex = /Tarea\s+Microservicio\s+Horas\s+([\s\S]+?)Total Frontend/;
+        //     const frontendTaskMatch = pdfText.match(regex);
+        //     if (frontendTaskMatch && frontendTaskMatch[1].trim()) {
+        //       const frontendSection = frontendTaskMatch[1].trim();
+        //       const frontendMicroserviceMatch = frontendSection.match(
+        //         /(?:Tarea\s+[^\s]+\s+)?([^\s]+)\s+\d+\s+Hs\./
+        //       );
+        //       return frontendMicroserviceMatch
+        //         ? frontendMicroserviceMatch[1].trim()
+        //         : null;
+        //     }
+        //   }
 
-            // Casos donde Backend tiene solo tareas
-            regex = /Tarea\s+Microservicio\s+Horas\s+([\s\S]+?)Total Backend/;
-            const backendTaskMatch = pdfText.match(regex);
-            if (backendTaskMatch && backendTaskMatch[1].trim()) {
-              const lines = backendTaskMatch[1].split('\n');
-              return lines.length > 0 ? lines[0].split(/\s{2,}/)[1] : null;
-            }
-          } else {
-            // Casos donde Frontend tiene solo horas o tareas con horas
-            regex = /Horas de Desarrollo Frontend\s+([\s\S]+?)\d+\s+Hs\./;
-            const frontendHoursMatch = pdfText.match(regex);
-            if (frontendHoursMatch && frontendHoursMatch[1].trim()) {
-              return frontendHoursMatch[1].trim();
-            }
+        //   // Casos con solo horas (sin tareas)
+        //   if (sectionType === 'Backend') {
+        //     regex = /Horas de Desarrollo Backend\s+(.+?)\s+\d+\s+Hs\./;
+        //   } else {
+        //     regex = /Horas de Desarrollo Frontend\s+(.+?)\s+\d+\s+Hs\./;
+        //   }
+        //   const hoursOnlyMatch = pdfText.match(regex);
+        //   return hoursOnlyMatch ? hoursOnlyMatch[1].trim() : null;
+        // };
 
-            // Casos donde Frontend tiene solo tareas
-            regex = /Tarea\s+Microservicio\s+Horas\s+([\s\S]+?)Total Frontend/;
-            const frontendTaskMatch = pdfText.match(regex);
-            if (frontendTaskMatch && frontendTaskMatch[1].trim()) {
-              const lines = frontendTaskMatch[1].split('\n');
-              return lines.length > 0 ? lines[0].split(/\s{2,}/)[1] : null;
-            }
-          }
+        // // Uso de la función para Backend
+        // const backendMicroservice = extractMicroservice(pdfText, 'Backend');
+        // if (backendMicroservice) {
+        //   this.formData.microservicioBackend = backendMicroservice;
+        //   console.log('Microservicio Backend:', backendMicroservice);
+        // }
 
-          return null;
-        };
-
-        // Uso de la función para Backend
-        const backendMicroservice = extractMicroservice(pdfText, 'Backend');
-        if (backendMicroservice) {
-          this.formData.microservicioBackend = backendMicroservice;
-          console.log('Microservicio Backend:', backendMicroservice);
-        }
-
-        // Uso de la función para Frontend
-        const frontendMicroservice = extractMicroservice(pdfText, 'Frontend');
-        if (frontendMicroservice) {
-          this.formData.microservicioFrontend = frontendMicroservice;
-          console.log('Microservicio Frontend:', frontendMicroservice);
-        }
+        // // Uso de la función para Frontend
+        // const frontendMicroservice = extractMicroservice(pdfText, 'Frontend');
+        // if (frontendMicroservice) {
+        //   this.formData.microservicioFrontend = frontendMicroservice;
+        //   console.log('Microservicio Frontend:', frontendMicroservice);
+        // }
 
         this.fillFormWithExtractedData(pdfText);
         // Manejar horas de Backend si no hay tareas
@@ -1204,6 +1207,464 @@ export class EstimadorComponent implements OnInit {
       reader.readAsArrayBuffer(this.uploadedFile);
     }
   }
+
+  // parsePDFText(pdfText: string): any {
+  //   if (this.frontendHoras || this.desarrolloHoras) {
+  //     this.frontendHoras = null;
+  //     this.desarrolloHoras = null;
+  //   }
+  //   const result: any = {};
+
+  //   // Extraer "APPSADE-49193 | Estimacion"
+  //   const estimationMatch = pdfText.match(/(\w+-\d+)\s+\|\s+(\w+)/);
+  //   result.estimacion = estimationMatch
+  //     ? {
+  //         codigo: estimationMatch[1].trim(),
+  //         titulo: estimationMatch[2].trim(),
+  //       }
+  //     : null;
+
+  //   // Extraer información del proyecto
+  //   const projectInfoMatch = pdfText.match(
+  //     /Proyecto\s+([^\s]+)\s+Autor\s+([^\s]+)\s+Versión\s+([\d.]+)\s+Descripción\s+(.+?)\s+(Registro de Cambios|Resumen de Tareas y Cálculos)/
+  //   );
+  //   result.projectInfo = projectInfoMatch
+  //     ? {
+  //         proyecto: projectInfoMatch[1].trim(),
+  //         autor: projectInfoMatch[2].trim(),
+  //         version: projectInfoMatch[3].trim(),
+  //         descripcion: projectInfoMatch[4].trim(),
+  //       }
+  //     : null;
+
+  //   // Extraer registro de cambios
+  //   const changesSectionMatch = pdfText.match(
+  //     /Registro de Cambios\s+Versión\s+Causa del cambio\s+Responsable del cambio\s+Fecha del cambio\s+([\s\S]+?)(?:\n|Resumen de Tareas y Cálculos)/
+  //   );
+
+  //   if (changesSectionMatch) {
+  //     const changesLines = changesSectionMatch[1].split('\n').filter(Boolean);
+
+  //     result.registroCambios = changesLines
+  //       .map((line) => {
+  //         const changeMatch = line.match(
+  //           /(\d+\.\d+)\s+(.+?)\s+(\w+)\s+([\d/]+)/
+  //         );
+  //         return changeMatch
+  //           ? {
+  //               version: changeMatch[1].trim(),
+  //               causaDelCambio: changeMatch[2].trim(),
+  //               responsableDelCambio: changeMatch[3].trim(),
+  //               fechaDelCambio: changeMatch[4].trim(),
+  //             }
+  //           : null;
+  //       })
+  //       .filter((change) => change !== null);
+  //   } else {
+  //     result.registroCambios = [];
+  //   }
+
+  //   // Extraer tareas y cálculos para Backend y Frontend
+  //   const backendTasksMatch = pdfText.match(
+  //     /Tarea\s+Microservicio\s+Horas\s+([\s\S]+?)Total Backend\s+([\d]+\s+Hs.)/
+  //   );
+  //   const frontendTasksMatch = pdfText.match(
+  //     /Tarea\s+Microservicio\s+Horas\s+([\s\S]+?)Total Frontend\s+([\d]+\s+Hs.)/
+  //   );
+
+  //   if (backendTasksMatch) {
+  //     const backendTasks = backendTasksMatch[1]
+  //       .split(/(\d+\s+Hs\.)/) // Dividir por cada ocurrencia de "XX Hs."
+  //       .reduce(
+  //         (acc: any[], current: string, index: number, array: string[]) => {
+  //           if (index % 2 === 0) {
+  //             const taskLine = current.trim();
+  //             const taskMatch = taskLine.match(/^(.+?)\s{2,}([\w\s]+)$/);
+  //             if (taskMatch) {
+  //               acc.push({
+  //                 tarea: taskMatch[1].trim(),
+  //                 microservicio: taskMatch[2].trim(),
+  //                 horas: array[index + 1].trim(), // El siguiente elemento es las horas
+  //               });
+  //             }
+  //           }
+  //           return acc;
+  //         },
+  //         []
+  //       )
+  //       .filter((task) => task !== null);
+
+  //     // Verificar si todos los microservicios son iguales
+  //     const allBackendMicroservicesSame = backendTasks.every(
+  //       (task) => task?.microservicio === backendTasks[0]?.microservicio
+  //     );
+
+  //     const parsedBackendTasks = allBackendMicroservicesSame
+  //       ? backendTasks.map(({ microservicio, ...rest }) => rest)
+  //       : backendTasks;
+
+  //     result.resumenTareasCalculos = {
+  //       tareas: parsedBackendTasks,
+  //       totalBackend: backendTasksMatch[2].trim(),
+  //     };
+  //   }
+
+  //   if (frontendTasksMatch) {
+  //     const frontendTasks = frontendTasksMatch[1]
+  //       .split(/(\d+\s+Hs\.)/) // Dividir por cada ocurrencia de "XX Hs."
+  //       .reduce(
+  //         (acc: any[], current: string, index: number, array: string[]) => {
+  //           if (index % 2 === 0) {
+  //             const taskLine = current.trim();
+  //             const taskMatch = taskLine.match(/^(.+?)\s{2,}([\w\s]+)$/);
+  //             if (taskMatch) {
+  //               acc.push({
+  //                 tarea: taskMatch[1].trim(),
+  //                 microservicio: taskMatch[2].trim(),
+  //                 horas: array[index + 1].trim(), // El siguiente elemento es las horas
+  //               });
+  //             }
+  //           }
+  //           return acc;
+  //         },
+  //         []
+  //       )
+  //       .filter((task) => task !== null);
+
+  //     // Verificar si todos los microservicios son iguales
+  //     const allFrontendMicroservicesSame = frontendTasks.every(
+  //       (task) => task?.microservicio === frontendTasks[0]?.microservicio
+  //     );
+
+  //     const parsedFrontendTasks = allFrontendMicroservicesSame
+  //       ? frontendTasks.map(({ microservicio, ...rest }) => rest)
+  //       : frontendTasks;
+
+  //     if (!result.resumenTareasCalculos) {
+  //       result.resumenTareasCalculos = {};
+  //     }
+
+  //     result.resumenTareasCalculos.tareasFrontend = parsedFrontendTasks;
+  //     result.resumenTareasCalculos.totalFrontend = frontendTasksMatch[2].trim();
+  //   }
+
+  //   return result;
+  // }
+
+  // // Tareas back y tareas front
+
+  // parsePDFTextWithBackendAndFrontend(pdfText: string): any {
+  //   if (this.frontendHoras || this.desarrolloHoras) {
+  //     this.frontendHoras = null;
+  //     this.desarrolloHoras = null;
+  //   }
+  //   const result: any = {};
+  //   // Extraer "APPSADE-49193 | Estimacion"
+  //   const estimationMatch = pdfText.match(/(\w+-\d+)\s+\|\s+(\w+)/);
+  //   result.estimacion = estimationMatch
+  //     ? {
+  //         codigo: estimationMatch[1].trim(),
+  //         titulo: estimationMatch[2].trim(),
+  //       }
+  //     : null;
+
+  //   // Extraer información del proyecto
+  //   const projectInfoMatch = pdfText.match(
+  //     /Proyecto\s+([^\s]+)\s+Autor\s+([^\s]+)\s+Versión\s+([\d.]+)\s+Descripción\s+(.+?)\s+(Registro de Cambios|Resumen de Tareas y Cálculos)/
+  //   );
+  //   result.projectInfo = projectInfoMatch
+  //     ? {
+  //         proyecto: projectInfoMatch[1].trim(),
+  //         autor: projectInfoMatch[2].trim(),
+  //         version: projectInfoMatch[3].trim(),
+  //         descripcion: projectInfoMatch[4].trim(),
+  //       }
+  //     : null;
+
+  //   // Extraer registro de cambios
+  //   const changesSectionMatch = pdfText.match(
+  //     /Registro de Cambios\s+Versión\s+Causa del cambio\s+Responsable del cambio\s+Fecha del cambio\s+([\s\S]+?)(?:\n|Resumen de Tareas y Cálculos)/
+  //   );
+
+  //   if (changesSectionMatch) {
+  //     const changesLines = changesSectionMatch[1].split('\n').filter(Boolean);
+
+  //     result.registroCambios = changesLines
+  //       .map((line) => {
+  //         const changeMatch = line.match(
+  //           /(\d+\.\d+)\s+(.+?)\s+(\w+)\s+([\d/]+)/
+  //         );
+  //         return changeMatch
+  //           ? {
+  //               version: changeMatch[1].trim(),
+  //               causaDelCambio: changeMatch[2].trim(),
+  //               responsableDelCambio: changeMatch[3].trim(),
+  //               fechaDelCambio: changeMatch[4].trim(),
+  //             }
+  //           : null;
+  //       })
+  //       .filter((change) => change !== null);
+  //   } else {
+  //     result.registroCambios = [];
+  //   }
+
+  //   // Separar la sección de Backend y Frontend
+  //   const tasksMatch = pdfText.match(
+  //     /Resumen de Tareas y Cálculos\s+Tarea\s+Microservicio\s+Horas\s+([\s\S]+?)Total Backend\s+(\d+\s+Hs\.)\s+Tarea\s+Microservicio\s+Horas\s+([\s\S]+?)Total Frontend\s+(\d+\s+Hs\.)/
+  //   );
+
+  //   if (tasksMatch) {
+  //     const backendSection = tasksMatch[1].trim();
+  //     const totalBackend = tasksMatch[2].trim();
+  //     const frontendSection = tasksMatch[3].trim();
+  //     const totalFrontend = tasksMatch[4].trim();
+
+  //     // Ajustar la extracción de tareas Backend
+  //     const backendTasks = backendSection
+  //       .split(/(?<=Hs\.)/) // Usar "Hs." como delimitador
+  //       .map((task) => {
+  //         const taskMatch = task
+  //           .trim()
+  //           .match(/(.+?)\s{2,}(.+?)\s+(\d+\s+Hs\.)$/);
+  //         return taskMatch
+  //           ? {
+  //               tarea: taskMatch[1].trim(),
+  //               microservicio: taskMatch[2].trim(),
+  //               horas: taskMatch[3].trim(),
+  //             }
+  //           : null;
+  //       })
+  //       .filter((task) => task !== null);
+
+  //     // Verificar si todos los microservicios son iguales en Backend
+  //     const allBackendMicroservicesSame = backendTasks.every(
+  //       (task) => task?.microservicio === backendTasks[0]?.microservicio
+  //     );
+
+  //     const parsedBackendTasks = allBackendMicroservicesSame
+  //       ? backendTasks.map((task) => {
+  //           const { microservicio, ...rest } = task as {
+  //             tarea: string;
+  //             microservicio: string;
+  //             horas: string;
+  //           };
+  //           return rest;
+  //         })
+  //       : backendTasks;
+
+  //     // Ajustar la extracción de tareas Frontend
+  //     const frontendTasks = frontendSection
+  //       .split(/(?<=Hs\.)/) // Usar "Hs." como delimitador
+  //       .map((task) => {
+  //         const taskMatch = task
+  //           .trim()
+  //           .match(/(.+?)\s{2,}(.+?)\s+(\d+\s+Hs\.)$/);
+  //         return taskMatch
+  //           ? {
+  //               tarea: taskMatch[1].trim(),
+  //               microservicio: taskMatch[2].trim(),
+  //               horas: taskMatch[3].trim(),
+  //             }
+  //           : null;
+  //       })
+  //       .filter((task) => task !== null);
+
+  //     // Verificar si todos los microservicios son iguales en Frontend
+  //     const allFrontendMicroservicesSame = frontendTasks.every(
+  //       (task) => task?.microservicio === frontendTasks[0]?.microservicio
+  //     );
+
+  //     const parsedFrontendTasks = allFrontendMicroservicesSame
+  //       ? frontendTasks.map((task) => {
+  //           const { microservicio, ...rest } = task as {
+  //             tarea: string;
+  //             microservicio: string;
+  //             horas: string;
+  //           };
+  //           return rest;
+  //         })
+  //       : frontendTasks;
+
+  //     result.resumenTareasCalculos = {
+  //       tareas: parsedBackendTasks,
+  //       totalBackend,
+  //       tareasFrontend: parsedFrontendTasks,
+  //       totalFrontend,
+  //     };
+  //   } else {
+  //   }
+
+  //   return result;
+  // }
+
+  // //recuperar pdf que no tenga tareas
+  // parsePDFTextWithoutTasks(pdfText: string): any {
+  //   if (this.frontendHoras || this.desarrolloHoras) {
+  //     this.frontendHoras = null;
+  //     this.desarrolloHoras = null;
+  //   }
+  //   const result: any = {};
+  //   // Extraer horas de desarrollo backend
+  //   const backendHoursMatch = pdfText.match(/Total Backend\s+(\d+)\s+Hs\./);
+  //   const frontendHoursMatch = pdfText.match(/Total Frontend\s+(\d+)\s+Hs\./);
+
+  //   if (backendHoursMatch) {
+  //     result.totalBackend = backendHoursMatch[1].trim(); // Solo el número
+  //   }
+
+  //   if (frontendHoursMatch) {
+  //     result.totalFrontend = frontendHoursMatch[1].trim(); // Solo el número
+  //   }
+
+  //   return result;
+  // }
+
+  // parsePDFJustBackend(pdfText: string): any {
+  //   const result: any = {};
+  //   // Extraer horas de desarrollo backend
+  //   if (this.frontendHoras || this.desarrolloHoras) {
+  //     this.frontendHoras = null;
+  //     this.desarrolloHoras = null;
+  //   }
+
+  //   const backendHoursMatch = pdfText.match(/Total Backend\s+(\d+)\s+Hs\./);
+  //   if (backendHoursMatch) {
+  //     result.totalBackend = backendHoursMatch[1].trim(); // Solo el número
+  //     result.totalFrontend = null;
+  //   }
+
+  //   return result;
+  // }
+
+  // parsePDFJustFrontend(pdfText: string): any {
+  //   const result: any = {};
+  //   const frontendHoursMatch = pdfText.match(/Total Frontend\s+(\d+)\s+Hs\./);
+
+  //   if (this.frontendHoras || this.desarrolloHoras) {
+  //     this.frontendHoras = null;
+  //     this.desarrolloHoras = null;
+  //   }
+
+  //   if (frontendHoursMatch) {
+  //     result.totalFrontend = frontendHoursMatch[1].trim();
+  //     result.totalBackend = null;
+  //   }
+
+  //   return result;
+  // }
+
+  // parsePDFTextWithBackendHoursAndFrontendTasks(
+  //   pdfText: string,
+  //   taskRegex?: RegExp
+  // ): any {
+  //   const result: any = {};
+
+  //   // Extraer horas de desarrollo backend
+  //   const backendHoursMatch = pdfText.match(/Total Backend\s+(\d+\s+Hs\.)/);
+  //   if (backendHoursMatch) {
+  //     result.totalBackend = backendHoursMatch[1].replace(' Hs.', '').trim();
+  //   }
+
+  //   // Extraer tareas frontend
+  //   const frontendTasksMatch = pdfText.match(
+  //     /Tarea\s+Microservicio\s+Horas\s+([\s\S]+?)Total Frontend\s+(\d+\s+Hs\.)/
+  //   );
+  //   if (frontendTasksMatch) {
+  //     const frontendTasks = frontendTasksMatch[1]
+  //       .split(/(\d+\s+Hs\.)/)
+  //       .reduce(
+  //         (acc: any[], current: string, index: number, array: string[]) => {
+  //           if (index % 2 === 0) {
+  //             const taskLine = current.trim();
+
+  //             // Filtrar las tareas que no corresponden a "Horas de Desarrollo"
+  //             if (!taskLine.includes('Horas de Desarrollo Backend')) {
+  //               // Ajustar la expresión regular para capturar la tarea completa
+  //               const taskRegexToUse =
+  //                 taskRegex || /Tarea\s+.+?\s+Horas\s+(.+?)\s{2,}(.+?)$/;
+  //               const taskMatch = taskLine.match(taskRegexToUse);
+
+  //               if (taskMatch) {
+  //                 acc.push({
+  //                   tarea: taskMatch[1].trim(), // Captura el nombre completo de la tarea "Tarea Front 1"
+  //                   microservicio: taskMatch[2].trim(), // Captura el microservicio "Front"
+  //                   horas: array[index + 1].trim(),
+  //                 });
+  //               }
+  //             }
+  //           }
+  //           return acc;
+  //         },
+  //         []
+  //       )
+  //       .filter((task) => task !== null);
+
+  //     // Verificar si todos los microservicios son iguales
+  //     const allFrontendMicroservicesSame = frontendTasks.every(
+  //       (task) => task.microservicio === frontendTasks[0].microservicio
+  //     );
+
+  //     result.resumenTareasCalculos = {
+  //       tareasFrontend: allFrontendMicroservicesSame
+  //         ? frontendTasks.map(({ tarea, horas }) => ({ tarea, horas }))
+  //         : frontendTasks,
+  //       totalFrontend: frontendTasksMatch[2].replace(' Hs.', '').trim(),
+  //     };
+  //   }
+
+  //   return result;
+  // }
+
+  // parsePDFTextWithFrontendHoursAndBackendTasks(pdfText: string): any {
+  //   const result: any = {};
+
+  //   // Extraer horas de desarrollo frontend
+  //   const frontendHoursMatch = pdfText.match(/Total Frontend\s+(\d+\s+Hs\.)/);
+  //   if (frontendHoursMatch) {
+  //     result.totalFrontend = frontendHoursMatch[1].replace(' Hs.', '').trim();
+  //   }
+
+  //   // Extraer tareas backend
+  //   const backendTasksMatch = pdfText.match(
+  //     /Tarea\s+Microservicio\s+Horas\s+([\s\S]+?)Total Backend\s+(\d+\s+Hs\.)/
+  //   );
+  //   if (backendTasksMatch) {
+  //     const tareas = backendTasksMatch[1]
+  //       .split(/(\d+\s+Hs\.)/)
+  //       .reduce(
+  //         (acc: any[], current: string, index: number, array: string[]) => {
+  //           if (index % 2 === 0) {
+  //             const taskLine = current.trim();
+  //             const taskMatch = taskLine.match(/^(.+?)\s{2,}([\w\s]+)$/);
+  //             if (taskMatch) {
+  //               acc.push({
+  //                 tarea: taskMatch[1].trim(),
+  //                 microservicio: taskMatch[2].trim(),
+  //                 horas: array[index + 1].trim(),
+  //               });
+  //             }
+  //           }
+  //           return acc;
+  //         },
+  //         []
+  //       )
+  //       .filter((task) => task !== null);
+
+  //     // Verificar si todos los microservicios son iguales
+  //     const allBackendMicroservicesSame = tareas.every(
+  //       (task) => task.microservicio === tareas[0].microservicio
+  //     );
+
+  //     result.resumenTareasCalculos = {
+  //       tareas: allBackendMicroservicesSame
+  //         ? tareas.map(({ tarea, horas }) => ({ tarea, horas })) // Si todos son iguales, excluye el microservicio
+  //         : tareas,
+  //       totalBackend: backendTasksMatch[2].trim(),
+  //     };
+  //   }
+
+  //   return result;
+  // }
 
   parsePDFText(pdfText: string): any {
     if (this.frontendHoras || this.desarrolloHoras) {
@@ -1304,6 +1765,10 @@ export class EstimadorComponent implements OnInit {
         tareas: parsedBackendTasks,
         totalBackend: backendTasksMatch[2].trim(),
       };
+
+      // Asignar microservicio de Backend
+      this.formData.microservicioBackend =
+        backendTasks[0]?.microservicio || null;
     }
 
     if (frontendTasksMatch) {
@@ -1343,12 +1808,14 @@ export class EstimadorComponent implements OnInit {
 
       result.resumenTareasCalculos.tareasFrontend = parsedFrontendTasks;
       result.resumenTareasCalculos.totalFrontend = frontendTasksMatch[2].trim();
+
+      // Asignar microservicio de Frontend
+      this.formData.microservicioFrontend =
+        frontendTasks[0]?.microservicio || null;
     }
 
     return result;
   }
-
-  // Tareas back y tareas front
 
   parsePDFTextWithBackendAndFrontend(pdfText: string): any {
     if (this.frontendHoras || this.desarrolloHoras) {
@@ -1356,6 +1823,7 @@ export class EstimadorComponent implements OnInit {
       this.desarrolloHoras = null;
     }
     const result: any = {};
+
     // Extraer "APPSADE-49193 | Estimacion"
     const estimationMatch = pdfText.match(/(\w+-\d+)\s+\|\s+(\w+)/);
     result.estimacion = estimationMatch
@@ -1471,30 +1939,34 @@ export class EstimadorComponent implements OnInit {
         (task) => task?.microservicio === frontendTasks[0]?.microservicio
       );
 
-      const parsedFrontendTasks = allFrontendMicroservicesSame
-        ? frontendTasks.map((task) => {
-            const { microservicio, ...rest } = task as {
-              tarea: string;
-              microservicio: string;
-              horas: string;
-            };
-            return rest;
-          })
-        : frontendTasks;
-
       result.resumenTareasCalculos = {
         tareas: parsedBackendTasks,
         totalBackend,
-        tareasFrontend: parsedFrontendTasks,
+        tareasFrontend: allFrontendMicroservicesSame
+          ? frontendTasks
+              .filter(
+                (
+                  task
+                ): task is {
+                  tarea: string;
+                  microservicio: string;
+                  horas: string;
+                } => task !== null
+              )
+              .map(({ tarea, horas }) => ({ tarea, horas }))
+          : frontendTasks,
         totalFrontend,
       };
-    } else {
+
+      // Asignar microservicio de Backend y Frontend
+      this.formData.microservicioBackend = backendTasks[0]?.microservicio || '';
+      this.formData.microservicioFrontend =
+        frontendTasks[0]?.microservicio || '';
     }
 
     return result;
   }
 
-  //recuperar pdf que no tenga tareas
   parsePDFTextWithoutTasks(pdfText: string): any {
     if (this.frontendHoras || this.desarrolloHoras) {
       this.frontendHoras = null;
@@ -1507,10 +1979,22 @@ export class EstimadorComponent implements OnInit {
 
     if (backendHoursMatch) {
       result.totalBackend = backendHoursMatch[1].trim(); // Solo el número
+      const backendMicroserviceMatch = pdfText.match(
+        /Horas de Desarrollo Backend\s+(.+?)\s+\d+\s+Hs\./
+      );
+      this.formData.microservicioBackend = backendMicroserviceMatch
+        ? backendMicroserviceMatch[1].trim()
+        : '';
     }
 
     if (frontendHoursMatch) {
       result.totalFrontend = frontendHoursMatch[1].trim(); // Solo el número
+      const frontendMicroserviceMatch = pdfText.match(
+        /Horas de Desarrollo Frontend\s+(.+?)\s+\d+\s+Hs\./
+      );
+      this.formData.microservicioFrontend = frontendMicroserviceMatch
+        ? frontendMicroserviceMatch[1].trim()
+        : '';
     }
 
     return result;
@@ -1527,6 +2011,12 @@ export class EstimadorComponent implements OnInit {
     const backendHoursMatch = pdfText.match(/Total Backend\s+(\d+)\s+Hs\./);
     if (backendHoursMatch) {
       result.totalBackend = backendHoursMatch[1].trim(); // Solo el número
+      const backendMicroserviceMatch = pdfText.match(
+        /Horas de Desarrollo Backend\s+(.+?)\s+\d+\s+Hs\./
+      );
+      this.formData.microservicioBackend = backendMicroserviceMatch
+        ? backendMicroserviceMatch[1].trim()
+        : '';
       result.totalFrontend = null;
     }
 
@@ -1544,6 +2034,12 @@ export class EstimadorComponent implements OnInit {
 
     if (frontendHoursMatch) {
       result.totalFrontend = frontendHoursMatch[1].trim();
+      const frontendMicroserviceMatch = pdfText.match(
+        /Horas de Desarrollo Frontend\s+(.+?)\s+\d+\s+Hs\./
+      );
+      this.formData.microservicioFrontend = frontendMicroserviceMatch
+        ? frontendMicroserviceMatch[1].trim()
+        : '';
       result.totalBackend = null;
     }
 
@@ -1560,6 +2056,12 @@ export class EstimadorComponent implements OnInit {
     const backendHoursMatch = pdfText.match(/Total Backend\s+(\d+\s+Hs\.)/);
     if (backendHoursMatch) {
       result.totalBackend = backendHoursMatch[1].replace(' Hs.', '').trim();
+      const backendMicroserviceMatch = pdfText.match(
+        /Horas de Desarrollo Backend\s+(.+?)\s+\d+\s+Hs\./
+      );
+      this.formData.microservicioBackend = backendMicroserviceMatch
+        ? backendMicroserviceMatch[1].trim()
+        : '';
     }
 
     // Extraer tareas frontend
@@ -1607,6 +2109,11 @@ export class EstimadorComponent implements OnInit {
           : frontendTasks,
         totalFrontend: frontendTasksMatch[2].replace(' Hs.', '').trim(),
       };
+
+      // Asignar el microservicio frontend
+      if (allFrontendMicroservicesSame && frontendTasks.length > 0) {
+        this.formData.microservicioFrontend = frontendTasks[0].microservicio;
+      }
     }
 
     return result;
@@ -1619,6 +2126,12 @@ export class EstimadorComponent implements OnInit {
     const frontendHoursMatch = pdfText.match(/Total Frontend\s+(\d+\s+Hs\.)/);
     if (frontendHoursMatch) {
       result.totalFrontend = frontendHoursMatch[1].replace(' Hs.', '').trim();
+      const frontendMicroserviceMatch = pdfText.match(
+        /Horas de Desarrollo Frontend\s+(.+?)\s+\d+\s+Hs\./
+      );
+      this.formData.microservicioFrontend = frontendMicroserviceMatch
+        ? frontendMicroserviceMatch[1].trim()
+        : '';
     }
 
     // Extraer tareas backend
@@ -1658,6 +2171,9 @@ export class EstimadorComponent implements OnInit {
           : tareas,
         totalBackend: backendTasksMatch[2].trim(),
       };
+
+      // Asignar nombre del microservicio Backend
+      this.formData.microservicioBackend = tareas[0]?.microservicio || '';
     }
 
     return result;
