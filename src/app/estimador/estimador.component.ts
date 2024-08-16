@@ -14,6 +14,9 @@ import { CommonModule } from '@angular/common';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { getDocument, GlobalWorkerOptions, version } from 'pdfjs-dist';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { HttpClientModule } from '@angular/common/http';
 
 GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/pdf.worker.min.mjs`;
 
@@ -136,7 +139,7 @@ const DEFAULT_VALORES_FRONTEND: CampoEstimacion[] = [
   templateUrl: './estimador.component.html',
   styleUrls: ['./estimador.component.css'],
   standalone: true,
-  imports: [FormsModule, NgChartsModule, CommonModule],
+  imports: [FormsModule, NgChartsModule, CommonModule, HttpClientModule],
 })
 export class EstimadorComponent implements OnInit {
   desarrolloHoras: number | null = null;
@@ -192,6 +195,7 @@ export class EstimadorComponent implements OnInit {
   selectedFile: File | null = null;
   isDragging = false;
   uploadedFile: File | null = null;
+  public pdfErrorMessage: string | null = null;
 
   private tempMicroservicesBackend: string[] = [];
   private tempMicroservicesFrontend: string[] = [];
@@ -212,9 +216,12 @@ export class EstimadorComponent implements OnInit {
   };
   public pieChartType: ChartType = 'pie';
 
+  appVersion: string | undefined;
+
   constructor(
     private estimadorService: EstimadorService,
-    @Inject(PLATFORM_ID) private platformId: Object
+    @Inject(PLATFORM_ID) private platformId: Object,
+    private http: HttpClient
   ) {
     this.isBrowser = isPlatformBrowser(this.platformId);
 
@@ -223,6 +230,10 @@ export class EstimadorComponent implements OnInit {
         html2pdf = module.default;
       });
     }
+  }
+
+  getAppVersion(): Observable<any> {
+    return this.http.get<any>('./assets/package.json');
   }
 
   @HostListener('window:beforeunload', ['$event'])
@@ -494,6 +505,10 @@ export class EstimadorComponent implements OnInit {
 
   ngOnInit(): void {
     this.currentDate = new Date().toLocaleDateString();
+
+    this.getAppVersion().subscribe((data) => {
+      this.appVersion = data.version;
+    });
   }
 
   handleFrontendSwitch(): void {
@@ -958,33 +973,6 @@ export class EstimadorComponent implements OnInit {
     this.showUploadModal = true;
   }
 
-  // closeUploadModal(): void {
-  //   this.showUploadModal = false;
-  //   this.selectedFile = null;
-  // }
-
-  // onDragOver(event: DragEvent): void {
-  //   event.preventDefault();
-  //   event.stopPropagation();
-  // }
-
-  // onDragLeave(event: DragEvent): void {
-  //   event.preventDefault();
-  //   event.stopPropagation();
-  // }
-
-  // onDrop(event: DragEvent): void {
-  //   event.preventDefault();
-  //   event.stopPropagation();
-
-  //   const file = event.dataTransfer?.files[0];
-  //   if (file && file.type === 'application/pdf') {
-  //     this.selectedFile = file;
-  //   } else {
-  //     alert('Solo se aceptan archivos PDF');
-  //   }
-  // }
-
   onFileSelected(event: any): void {
     const file = event.target.files[0];
     if (file && file.type === 'application/pdf') {
@@ -1018,7 +1006,17 @@ export class EstimadorComponent implements OnInit {
           pdfText += `Page ${i}: ${pageText}\n`;
         }
 
+        if (
+          !pdfText.includes('Registro de Cambios') &&
+          !pdfText.includes('Resumen de Tareas y Cálculos')
+        ) {
+          this.pdfErrorMessage = 'El PDF no pertenece a esta aplicación';
+          return;
+        }
+
         let parsedData: any;
+        this.pdfErrorMessage = null;
+
         if (
           pdfText.includes('Horas de Desarrollo Backend') &&
           pdfText.includes('Horas de Desarrollo Frontend') &&
@@ -1316,9 +1314,6 @@ export class EstimadorComponent implements OnInit {
       }
     }
 
-    console.log(this.microservicesBackend);
-    console.log(this.microservicesFrontend);
-
     return result;
   }
 
@@ -1451,7 +1446,6 @@ export class EstimadorComponent implements OnInit {
         frontendTasks[0]?.microservicio || '';
     }
 
-    console.log(this.microservicesBackend);
     return result;
   }
 
@@ -1735,21 +1729,36 @@ export class EstimadorComponent implements OnInit {
         .substring(projectStartIndex, endOfSectionIndex)
         .trim();
 
-      // Extraer el texto que estaba siendo capturado en "descripcion"
+      // Extraer los valores de Proyecto, Autor, Versión y Descripción
+      const proyectoMatch = cleanedText.match(/Proyecto\s+(.+?)\s+Autor/);
+      const autorMatch = cleanedText.match(/Autor\s+(.+?)\s+Versión/);
+      const versionMatch = cleanedText.match(/Versión\s+(.+?)\s+Descripción/);
       const descripcionMatch = cleanedText.match(/Descripción\s+(.+)/);
 
-      if (descripcionMatch) {
-        const descripcionText = descripcionMatch[1].trim();
+      // Si se encontraron las coincidencias, asignarlas a las variables
+      result.proyecto = proyectoMatch ? proyectoMatch[1].trim() : '';
+      result.nombreDesarrollador = autorMatch
+        ? autorMatch[1].replace(/\s+\d+\.\d+$/, '').trim() // Remover el "1.0"
+        : '';
+      result.version = ''; // Eliminar la versión del parseo
+      result.descripcion = descripcionMatch ? descripcionMatch[1].trim() : '';
 
-        // Dividir el texto por los espacios para identificar cada campo
-        const parts = descripcionText.split(/\s{2,}/);
+      // Si no se encontraron las coincidencias, usar la información de "descripcion"
+      const parts = result.descripcion.split(/\s{2,}/);
 
-        if (parts.length >= 4) {
-          result.proyecto = parts[0] || '';
-          result.nombreDesarrollador = parts[1] || '';
-          result.version = parts[2] || '';
-          result.descripcion = parts.slice(3).join(' ') || ''; // El resto es la descripción
-        }
+      if (parts.length >= 3) {
+        result.proyecto = parts[0].trim();
+        result.nombreDesarrollador = parts[1]
+          .replace(/\s+\d+\.\d+$/, '')
+          .trim(); // Remover el "1.0"
+        result.descripcion = parts.slice(2).join(' ').trim();
+      }
+    }
+
+    // Eliminar cualquier ocurrencia de "1.0" en el resultado final
+    for (const key in result) {
+      if (typeof result[key] === 'string') {
+        result[key] = result[key].replace(/\b1\.0\b/g, '').trim();
       }
     }
 

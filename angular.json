@@ -24,6 +24,11 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "package.json",
+                "input": "./",
+                "output": "./assets/"
               }
             ],
             "styles": [
@@ -88,6 +93,11 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "package.json",
+                "input": "./",
+                "output": "./assets/"
               }
             ],
             "styles": [
