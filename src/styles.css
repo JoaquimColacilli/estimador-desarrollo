@@ -166,3 +166,7 @@ input:checked + label .block {
 .border-4 {
   border-width: 4px;
 }
+
+.custom-modal-width {
+  width: 500px; /* O el ancho que desees */
+}

@@ -493,111 +493,27 @@
             ></i>
           </div>
 
-          <!-- Encabezado de columnas para H.Back, H.Front y Total -->
           <div class="flex justify-between mb-2">
             <span class="flex-grow text-left"></span>
-            <!-- Espacio para alinear los títulos -->
             <span class="w-20 text-right font-bold">H.Back</span>
             <span class="w-20 text-right font-bold">H.Front</span>
             <span class="w-20 text-right font-bold">Total</span>
           </div>
 
-          <!-- Filas con los títulos y valores calculados -->
           <ul class="space-y-2 mb-4">
-            <li class="flex justify-between items-center">
-              <span class="flex-grow text-left">Análisis Funcional:</span>
+            <li
+              class="flex justify-between items-center"
+              *ngFor="let campo of camposEstimacionBackend"
+            >
+              <span class="flex-grow text-left">{{ campo.label }}:</span>
               <span class="w-20 text-right"
-                >{{ estimaciones?.analisisFuncionalBack }} Hs.</span
+                >{{ estimaciones?.[campo.key + 'Back'] }} Hs.</span
               >
               <span class="w-20 text-right"
-                >{{ estimaciones?.analisisFuncionalFront }} Hs.</span
+                >{{ estimaciones?.[campo.key + 'Front'] }} Hs.</span
               >
               <span class="w-20 text-right"
-                >{{ estimaciones?.analisisFuncionalTotal }} Hs.</span
-              >
-            </li>
-            <li class="flex justify-between items-center">
-              <span class="flex-grow text-left">Análisis Técnico:</span>
-              <span class="w-20 text-right"
-                >{{ estimaciones?.analisisTecnicoBack }} Hs.</span
-              >
-              <span class="w-20 text-right"
-                >{{ estimaciones?.analisisTecnicoFront }} Hs.</span
-              >
-              <span class="w-20 text-right"
-                >{{ estimaciones?.analisisTecnicoTotal }} Hs.</span
-              >
-            </li>
-            <li class="flex justify-between items-center">
-              <span class="flex-grow text-left">Pruebas Unitarias:</span>
-              <span class="w-20 text-right"
-                >{{ estimaciones?.pruebasUnitariasBack }} Hs.</span
-              >
-              <span class="w-20 text-right"
-                >{{ estimaciones?.pruebasUnitariasFront }} Hs.</span
-              >
-              <span class="w-20 text-right"
-                >{{ estimaciones?.pruebasUnitariasTotal }} Hs.</span
-              >
-            </li>
-            <li class="flex justify-between items-center">
-              <span class="flex-grow text-left">Pruebas de Integración:</span>
-              <span class="w-20 text-right"
-                >{{ estimaciones?.pruebasIntegracionBack }} Hs.</span
-              >
-              <span class="w-20 text-right"
-                >{{ estimaciones?.pruebasIntegracionFront }} Hs.</span
-              >
-              <span class="w-20 text-right"
-                >{{ estimaciones?.pruebasIntegracionTotal }} Hs.</span
-              >
-            </li>
-            <li class="flex justify-between items-center">
-              <span class="flex-grow text-left">Implementación y Soporte:</span>
-              <span class="w-20 text-right"
-                >{{ estimaciones?.implementacionYSoporteBack }} Hs.</span
-              >
-              <span class="w-20 text-right"
-                >{{ estimaciones?.implementacionYSoporteFront }} Hs.</span
-              >
-              <span class="w-20 text-right"
-                >{{ estimaciones?.implementacionYSoporteTotal }} Hs.</span
-              >
-            </li>
-            <li class="flex justify-between items-center">
-              <span class="flex-grow text-left">Gestión:</span>
-              <span class="w-20 text-right"
-                >{{ estimaciones?.gestionBack }} Hs.</span
-              >
-              <span class="w-20 text-right"
-                >{{ estimaciones?.gestionFront }} Hs.</span
-              >
-              <span class="w-20 text-right"
-                >{{ estimaciones?.gestionTotal }} Hs.</span
-              >
-            </li>
-            <li class="flex justify-between items-center">
-              <span class="flex-grow text-left">Documentación:</span>
-              <span class="w-20 text-right"
-                >{{ estimaciones?.documentacionBack }} Hs.</span
-              >
-              <span class="w-20 text-right"
-                >{{ estimaciones?.documentacionFront }} Hs.</span
-              >
-              <span class="w-20 text-right"
-                >{{ estimaciones?.documentacionTotal }} Hs.</span
-              >
-            </li>
-            <li class="flex justify-between items-center">
-              <span class="flex-grow text-left">Desarrollo:</span>
-              <span class="w-20 text-right"
-                >{{ estimaciones?.desarrolloBackend }} Hs.</span
-              >
-              <span class="w-20 text-right"
-                >{{ estimaciones?.desarrolloFront }} Hs.</span
-              >
-              <span class="w-20 text-right"
-                >{{ estimaciones?.desarrolloTotal }} Hs.</span
+                >{{ estimaciones?.[campo.key + 'Total'] }} Hs.</span
               >
             </li>
           </ul>
@@ -616,6 +532,7 @@
             ></canvas>
           </div>
         </div>
+
         <div class="flex justify-between items-center mt-4">
           <div class="flex items-center">
             <i class="fa-solid fa-code-branch text-gray-600"></i>
@@ -632,7 +549,7 @@
         </div>
       </div>
 
-      <div
+      <!-- <div
         *ngIf="showConfiguracion"
         class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
         style="z-index: 9999999999999999999999999999"
@@ -791,6 +708,241 @@
             </button>
           </div>
         </div>
+      </div> -->
+
+      <div
+        *ngIf="showConfiguracion"
+        class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
+        style="z-index: 9999999999999999999999999999"
+      >
+        <div
+          class="bg-white p-6 rounded-lg shadow-lg custom-modal-width w-full"
+          style="height: 800px"
+        >
+          <div class="flex justify-between items-center mb-4">
+            <div class="tabs">
+              <button
+                [ngClass]="{ 'active-tab': activeTab === 'backend' }"
+                (click)="switchTab('backend')"
+                class="tab-button"
+              >
+                Configuración Backend
+              </button>
+              <button
+                [ngClass]="{ 'active-tab': activeTab === 'frontend' }"
+                (click)="switchTab('frontend')"
+                class="tab-button"
+              >
+                Configuración Frontend
+              </button>
+            </div>
+            <button class="text-gray-700" (click)="toggleConfiguracion()">
+              <i class="fa-solid fa-times"></i>
+            </button>
+          </div>
+          <div class="overflow-y-auto" style="max-height: 600px">
+            <ul class="space-y-4">
+              <ng-container
+                *ngIf="activeTab === 'backend'; else frontendConfiguracion"
+              >
+                <ng-container
+                  *ngFor="let campo of camposEstimacionBackend; let i = index"
+                >
+                  <li class="flex flex-col">
+                    <div class="flex justify-between items-center mb-2">
+                      <span *ngIf="!campo.editing" class="flex-grow"
+                        >{{ campo.label }}:</span
+                      >
+                      <input
+                        *ngIf="campo.editing"
+                        type="text"
+                        class="w-32 p-1 border border-gray-300 rounded-md flex-grow"
+                        [(ngModel)]="campo.label"
+                        (ngModelChange)="updateField(campo, 'backend')"
+                      />
+                      <div class="flex items-center space-x-2 ml-4">
+                        <label>%</label>
+                        <input
+                          type="radio"
+                          name="{{ campo.key }}"
+                          value="porcentaje"
+                          [(ngModel)]="campo.modo"
+                          (change)="updateEstimaciones()"
+                        />
+                        <label>Horas</label>
+                        <input
+                          type="radio"
+                          name="{{ campo.key }}"
+                          value="horas"
+                          [(ngModel)]="campo.modo"
+                          (change)="updateEstimaciones()"
+                        />
+                      </div>
+                      <div class="flex items-center">
+                        <button
+                          *ngIf="!campo.editing"
+                          (click)="campo.editing = true"
+                          class="text-blue-500 ml-2"
+                        >
+                          <i class="fa-solid fa-edit"></i>
+                        </button>
+                        <button
+                          *ngIf="campo.editing"
+                          (click)="campo.editing = false"
+                          class="text-green-500 ml-2"
+                        >
+                          <i class="fa-solid fa-check"></i>
+                        </button>
+                        <button
+                          (click)="removeItem('backend', i)"
+                          class="text-red-500 ml-2"
+                        >
+                          <i class="fa-solid fa-trash"></i>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                      <div class="flex items-center">
+                        <input
+                          type="number"
+                          class="w-20 p-1 border border-gray-300 rounded-md"
+                          [(ngModel)]="campo.porcentaje"
+                          *ngIf="campo.modo === 'porcentaje'"
+                          (input)="updateEstimaciones()"
+                          [max]="100"
+                          min="0"
+                        />
+                        <span *ngIf="campo.modo === 'porcentaje'" class="ml-1"
+                          >%</span
+                        >
+                        <input
+                          type="number"
+                          class="w-20 p-1 border border-gray-300 rounded-md ml-2"
+                          [(ngModel)]="campo.horas"
+                          *ngIf="campo.modo === 'horas'"
+                          (input)="updateEstimaciones()"
+                          min="0"
+                        />
+                      </div>
+                    </div>
+                  </li>
+                </ng-container>
+                <button (click)="addNewItem('backend')" class="text-blue-500">
+                  <i class="fa-solid fa-plus"></i> Agregar nuevo ítem
+                </button>
+              </ng-container>
+
+              <ng-template #frontendConfiguracion>
+                <ng-container
+                  *ngFor="let campo of camposEstimacionFrontend; let i = index"
+                >
+                  <li class="flex flex-col">
+                    <div class="flex justify-between items-center mb-2">
+                      <span *ngIf="!campo.editing" class="flex-grow"
+                        >{{ campo.label }}:</span
+                      >
+                      <input
+                        *ngIf="campo.editing"
+                        type="text"
+                        class="w-32 p-1 border border-gray-300 rounded-md flex-grow"
+                        [(ngModel)]="campo.label"
+                        (ngModelChange)="updateField(campo, 'frontend')"
+                      />
+                      <div class="flex items-center space-x-2 ml-4">
+                        <label>%</label>
+                        <input
+                          type="radio"
+                          name="{{ campo.key }}"
+                          value="porcentaje"
+                          [(ngModel)]="campo.modo"
+                          (change)="updateEstimaciones()"
+                        />
+                        <label>Horas</label>
+                        <input
+                          type="radio"
+                          name="{{ campo.key }}"
+                          value="horas"
+                          [(ngModel)]="campo.modo"
+                          (change)="updateEstimaciones()"
+                        />
+                      </div>
+                      <div class="flex items-center">
+                        <button
+                          *ngIf="!campo.editing"
+                          (click)="campo.editing = true"
+                          class="text-blue-500 ml-2"
+                        >
+                          <i class="fa-solid fa-edit"></i>
+                        </button>
+                        <button
+                          *ngIf="campo.editing"
+                          (click)="campo.editing = false"
+                          class="text-green-500 ml-2"
+                        >
+                          <i class="fa-solid fa-check"></i>
+                        </button>
+                        <button
+                          (click)="removeItem('frontend', i)"
+                          class="text-red-500 ml-2"
+                        >
+                          <i class="fa-solid fa-trash"></i>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                      <div class="flex items-center">
+                        <input
+                          type="number"
+                          class="w-20 p-1 border border-gray-300 rounded-md"
+                          [(ngModel)]="campo.porcentaje"
+                          *ngIf="campo.modo === 'porcentaje'"
+                          (input)="updateEstimaciones()"
+                          [max]="100"
+                          min="0"
+                        />
+                        <span *ngIf="campo.modo === 'porcentaje'" class="ml-1"
+                          >%</span
+                        >
+                        <input
+                          type="number"
+                          class="w-20 p-1 border border-gray-300 rounded-md ml-2"
+                          [(ngModel)]="campo.horas"
+                          *ngIf="campo.modo === 'horas'"
+                          (input)="updateEstimaciones()"
+                          min="0"
+                        />
+                      </div>
+                    </div>
+                  </li>
+                </ng-container>
+                <button (click)="addNewItem('frontend')" class="text-blue-500">
+                  <i class="fa-solid fa-plus"></i> Agregar nuevo ítem
+                </button>
+              </ng-template>
+            </ul>
+          </div>
+
+          <div class="flex justify-between mt-4">
+            <button
+              class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+              (click)="restablecerValores()"
+            >
+              Restablecer valores
+            </button>
+            <button
+              class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              (click)="guardarConfiguracion()"
+              [disabled]="isSaveDisabled()"
+              [ngClass]="{
+                'bg-gray-400 cursor-not-allowed': isSaveDisabled(),
+                'bg-blue-500 hover:bg-blue-700 cursor-pointer':
+                  !isSaveDisabled()
+              }"
+            >
+              Guardar
+            </button>
+          </div>
+        </div>
       </div>
 
       <div
@@ -799,12 +951,19 @@
       >
         <div class="absolute top-0 right-0 mt-4 mr-4 flex items-center">
           <i
-            class="fa-solid fa-cog cursor-pointer text-gray-700"
+            class="fa-solid fa-cog"
             title="Este botón permitirá configurar múltiples microservicios para Backend."
-            (click)="toggleMicroservicesModal('backend')"
+            [class.cursor-not-allowed]="hasTasks('backend')"
+            [class.text-gray-400]="hasTasks('backend')"
+            (click)="
+              hasTasks('backend') ? null : toggleMicroservicesModal('backend')
+            "
+            [ngClass]="{
+              'text-gray-700 cursor-pointer': !hasTasks('backend'),
+              'text-gray-400 cursor-not-allowed': hasTasks('backend')
+            }"
           ></i>
         </div>
-
         <h2 class="text-2xl font-semibold mb-2 text-gray-700">
           Agregar Tareas Backend
         </h2>
@@ -908,9 +1067,17 @@
       >
         <div class="absolute top-0 right-0 mt-4 mr-4 flex items-center">
           <i
-            class="fa-solid fa-cog cursor-pointer text-gray-700"
+            class="fa-solid fa-cog"
             title="Este botón permitirá configurar múltiples microservicios para Frontend."
-            (click)="toggleMicroservicesModal('frontend')"
+            [class.cursor-not-allowed]="hasTasks('frontend')"
+            [class.text-gray-400]="hasTasks('frontend')"
+            (click)="
+              hasTasks('frontend') ? null : toggleMicroservicesModal('frontend')
+            "
+            [ngClass]="{
+              'text-gray-700 cursor-pointer': !hasTasks('frontend'),
+              'text-gray-400 cursor-not-allowed': hasTasks('frontend')
+            }"
           ></i>
         </div>
 

@@ -25,9 +25,10 @@ let html2pdf: any;
 interface CampoEstimacion {
   key: string;
   label: string;
-  porcentaje: number | null | undefined; // Permite número, null o undefined
+  porcentaje: number | null | undefined;
   horas: number | null;
   modo: 'porcentaje' | 'horas';
+  editing?: boolean;
 }
 
 const DEFAULT_VALORES_BACKEND: CampoEstimacion[] = [
@@ -37,6 +38,7 @@ const DEFAULT_VALORES_BACKEND: CampoEstimacion[] = [
     porcentaje: 10,
     horas: null,
     modo: 'porcentaje',
+    editing: false,
   },
   {
     key: 'analisisTecnico',
@@ -44,6 +46,7 @@ const DEFAULT_VALORES_BACKEND: CampoEstimacion[] = [
     porcentaje: 10,
     horas: null,
     modo: 'porcentaje',
+    editing: false,
   },
   {
     key: 'pruebasUnitarias',
@@ -51,6 +54,7 @@ const DEFAULT_VALORES_BACKEND: CampoEstimacion[] = [
     porcentaje: 10,
     horas: null,
     modo: 'porcentaje',
+    editing: false,
   },
   {
     key: 'pruebasIntegracion',
@@ -58,6 +62,7 @@ const DEFAULT_VALORES_BACKEND: CampoEstimacion[] = [
     porcentaje: 10,
     horas: null,
     modo: 'porcentaje',
+    editing: false,
   },
   {
     key: 'implementacionYSoporte',
@@ -65,6 +70,7 @@ const DEFAULT_VALORES_BACKEND: CampoEstimacion[] = [
     porcentaje: 15,
     horas: null,
     modo: 'porcentaje',
+    editing: false,
   },
   {
     key: 'gestion',
@@ -72,6 +78,7 @@ const DEFAULT_VALORES_BACKEND: CampoEstimacion[] = [
     porcentaje: 15,
     horas: null,
     modo: 'porcentaje',
+    editing: false,
   },
   {
     key: 'documentacion',
@@ -79,6 +86,7 @@ const DEFAULT_VALORES_BACKEND: CampoEstimacion[] = [
     porcentaje: undefined,
     horas: 8,
     modo: 'horas',
+    editing: false,
   },
 ];
 
@@ -89,6 +97,7 @@ const DEFAULT_VALORES_FRONTEND: CampoEstimacion[] = [
     porcentaje: 10,
     horas: null,
     modo: 'porcentaje',
+    editing: false,
   },
   {
     key: 'analisisTecnico',
@@ -96,6 +105,7 @@ const DEFAULT_VALORES_FRONTEND: CampoEstimacion[] = [
     porcentaje: 10,
     horas: null,
     modo: 'porcentaje',
+    editing: false,
   },
   {
     key: 'pruebasUnitarias',
@@ -103,6 +113,7 @@ const DEFAULT_VALORES_FRONTEND: CampoEstimacion[] = [
     porcentaje: 10,
     horas: null,
     modo: 'porcentaje',
+    editing: false,
   },
   {
     key: 'pruebasIntegracion',
@@ -110,6 +121,7 @@ const DEFAULT_VALORES_FRONTEND: CampoEstimacion[] = [
     porcentaje: 10,
     horas: null,
     modo: 'porcentaje',
+    editing: false,
   },
   {
     key: 'implementacionYSoporte',
@@ -117,6 +129,7 @@ const DEFAULT_VALORES_FRONTEND: CampoEstimacion[] = [
     porcentaje: 15,
     horas: null,
     modo: 'porcentaje',
+    editing: false,
   },
   {
     key: 'gestion',
@@ -124,6 +137,7 @@ const DEFAULT_VALORES_FRONTEND: CampoEstimacion[] = [
     porcentaje: 15,
     horas: null,
     modo: 'porcentaje',
+    editing: false,
   },
   {
     key: 'documentacion',
@@ -131,6 +145,7 @@ const DEFAULT_VALORES_FRONTEND: CampoEstimacion[] = [
     porcentaje: undefined,
     horas: 8,
     modo: 'horas',
+    editing: false,
   },
 ];
 
@@ -217,6 +232,8 @@ export class EstimadorComponent implements OnInit {
   public pieChartType: ChartType = 'pie';
 
   appVersion: string | undefined;
+  originalCamposBackend: CampoEstimacion[] = [];
+  originalCamposFrontend: CampoEstimacion[] = [];
 
   constructor(
     private estimadorService: EstimadorService,
@@ -519,21 +536,207 @@ export class EstimadorComponent implements OnInit {
     this.calcularEstimacion();
   }
 
-  toggleConfiguracion(): void {
-    this.showConfiguracion = !this.showConfiguracion;
-  }
+  // toggleConfiguracion(): void {
+  //   this.showConfiguracion = !this.showConfiguracion;
+  // }
 
   switchTab(tab: 'backend' | 'frontend'): void {
     this.activeTab = tab;
   }
 
-  guardarConfiguracion(): void {
-    this.calcularEstimacion();
-    this.toggleConfiguracion();
-  }
+  // guardarConfiguracion(): void {
+  //   this.calcularEstimacion();
+  //   this.toggleConfiguracion();
+  // }
 
   updateEstimaciones(): void {
+    this.camposEstimacionBackend.forEach((campoBackend) => {
+      const campoFrontend = this.camposEstimacionFrontend.find(
+        (c) => c.key === campoBackend.key
+      );
+      if (campoFrontend) {
+        campoFrontend.label = campoBackend.label;
+        campoFrontend.porcentaje = campoBackend.porcentaje;
+        campoFrontend.horas = campoBackend.horas;
+        campoFrontend.modo = campoBackend.modo;
+      }
+    });
+
+    this.camposEstimacionFrontend.forEach((campoFrontend) => {
+      const campoBackend = this.camposEstimacionBackend.find(
+        (c) => c.key === campoFrontend.key
+      );
+      if (campoBackend) {
+        campoBackend.label = campoFrontend.label;
+        campoBackend.porcentaje = campoFrontend.porcentaje;
+        campoBackend.horas = campoFrontend.horas;
+        campoBackend.modo = campoFrontend.modo;
+      }
+    });
+
+    // Recalcular todas las estimaciones y totalizar horas
     this.calcularEstimacion();
+  }
+  syncEstimacionesConCampos(): void {
+    this.camposEstimacionBackend.forEach((campo) => {
+      const keyBase = campo.key;
+      if (campo.modo === 'porcentaje') {
+        this.estimaciones[keyBase + 'Back'] = Math.round(
+          (this.totalBackendHoras * (campo.porcentaje || 0)) / 100
+        );
+      } else {
+        this.estimaciones[keyBase + 'Back'] = campo.horas || 0;
+      }
+      this.estimaciones[keyBase + 'Total'] =
+        this.estimaciones[keyBase + 'Back'] +
+        (this.estimaciones[keyBase + 'Front'] || 0);
+    });
+
+    this.camposEstimacionFrontend.forEach((campo) => {
+      const keyBase = campo.key;
+      if (campo.modo === 'porcentaje') {
+        this.estimaciones[keyBase + 'Front'] = Math.round(
+          (this.totalFrontendHoras * (campo.porcentaje || 0)) / 100
+        );
+      } else {
+        this.estimaciones[keyBase + 'Front'] = campo.horas || 0;
+      }
+      this.estimaciones[keyBase + 'Total'] =
+        this.estimaciones[keyBase + 'Front'] +
+        (this.estimaciones[keyBase + 'Back'] || 0);
+    });
+  }
+
+  guardarConfiguracion(): void {
+    this.camposEstimacionBackend.forEach((campo) => {
+      if (campo.editing) {
+        campo.editing = false;
+      }
+    });
+    this.camposEstimacionFrontend.forEach((campo) => {
+      if (campo.editing) {
+        campo.editing = false;
+      }
+    });
+
+    this.updateEstimaciones();
+
+    this.updatePieChartData();
+
+    this.showConfiguracion = false;
+  }
+
+  toggleConfiguracion(): void {
+    if (this.showConfiguracion) {
+      this.camposEstimacionBackend = JSON.parse(
+        JSON.stringify(this.originalCamposBackend)
+      );
+      this.camposEstimacionFrontend = JSON.parse(
+        JSON.stringify(this.originalCamposFrontend)
+      );
+    } else {
+      this.originalCamposBackend = JSON.parse(
+        JSON.stringify(this.camposEstimacionBackend)
+      );
+      this.originalCamposFrontend = JSON.parse(
+        JSON.stringify(this.camposEstimacionFrontend)
+      );
+    }
+    this.showConfiguracion = !this.showConfiguracion;
+  }
+
+  isSaveDisabled(): boolean {
+    return (
+      this.camposEstimacionBackend.some((campo) => !campo.label.trim()) ||
+      this.camposEstimacionFrontend.some((campo) => !campo.label.trim()) ||
+      !this.isValidConfiguration()
+    );
+  }
+
+  addNewItem(type: 'backend' | 'frontend'): void {
+    const newItemKey =
+      'nuevaEstimacion' +
+      (type === 'backend'
+        ? this.camposEstimacionBackend.length + 1
+        : this.camposEstimacionFrontend.length + 1);
+
+    const newItem: CampoEstimacion = {
+      key: newItemKey,
+      label: 'Nueva Propiedad',
+      porcentaje: 10,
+      horas: 0,
+      modo: 'porcentaje',
+      editing: false,
+    };
+
+    if (type === 'backend') {
+      this.camposEstimacionBackend.push(newItem);
+      const copiedItem = { ...newItem };
+      this.camposEstimacionFrontend.push(copiedItem);
+    } else {
+      this.camposEstimacionFrontend.push(newItem);
+      const copiedItem = { ...newItem };
+      this.camposEstimacionBackend.push(copiedItem);
+    }
+
+    // Actualiza las estimaciones
+    this.updateEstimaciones();
+
+    // Actualiza los datos del gráfico de torta
+    this.updatePieChartData();
+  }
+
+  removeItem(type: 'backend' | 'frontend', index: number): void {
+    if (type === 'backend') {
+      const itemKey = this.camposEstimacionBackend[index].key;
+      this.camposEstimacionBackend.splice(index, 1);
+
+      const frontendIndex = this.camposEstimacionFrontend.findIndex(
+        (campo) => campo.key === itemKey
+      );
+      if (frontendIndex !== -1) {
+        this.camposEstimacionFrontend.splice(frontendIndex, 1);
+      }
+    } else {
+      const itemKey = this.camposEstimacionFrontend[index].key;
+      this.camposEstimacionFrontend.splice(index, 1);
+
+      const backendIndex = this.camposEstimacionBackend.findIndex(
+        (campo) => campo.key === itemKey
+      );
+      if (backendIndex !== -1) {
+        this.camposEstimacionBackend.splice(backendIndex, 1);
+      }
+    }
+
+    this.updateEstimaciones();
+  }
+
+  updateField(field: CampoEstimacion, type: 'backend' | 'frontend'): void {
+    // Actualizar el campo en la lista correspondiente
+    if (type === 'backend') {
+      const frontendField = this.camposEstimacionFrontend.find(
+        (campo) => campo.key === field.key
+      );
+      if (frontendField) {
+        frontendField.label = field.label;
+        frontendField.porcentaje = field.porcentaje;
+        frontendField.horas = field.horas;
+        frontendField.modo = field.modo;
+      }
+    } else {
+      const backendField = this.camposEstimacionBackend.find(
+        (campo) => campo.key === field.key
+      );
+      if (backendField) {
+        backendField.label = field.label;
+        backendField.porcentaje = field.porcentaje;
+        backendField.horas = field.horas;
+        backendField.modo = field.modo;
+      }
+    }
+
+    this.updateEstimaciones();
   }
 
   restablecerValores(): void {
@@ -630,41 +833,29 @@ export class EstimadorComponent implements OnInit {
     };
 
     this.camposEstimacionBackend.forEach((campo) => {
-      if (campo.key === 'documentacion' && this.totalBackendHoras === 0) {
-        this.estimaciones[campo.key + 'Back'] = 0;
-      } else if (
-        campo.modo === 'porcentaje' &&
-        campo.porcentaje !== undefined &&
-        campo.porcentaje !== null
-      ) {
-        this.estimaciones[campo.key + 'Back'] = Math.round(
-          (this.totalBackendHoras * campo.porcentaje) / 100
-        );
-      } else {
-        this.estimaciones[campo.key + 'Back'] = campo.horas ?? 0;
-      }
-      this.estimaciones[campo.key + 'Total'] +=
-        this.estimaciones[campo.key + 'Back'];
-      this.totalCalculoBackend += this.estimaciones[campo.key + 'Back']; // Sumar horas de cálculo Backend
+      const porcentaje = campo.porcentaje ?? 0;
+      this.estimaciones[campo.key + 'Back'] =
+        campo.modo === 'porcentaje'
+          ? Math.round((this.totalBackendHoras * porcentaje) / 100)
+          : campo.horas ?? 0;
+
+      this.estimaciones[campo.key + 'Total'] =
+        (this.estimaciones[campo.key + 'Back'] || 0) +
+        (this.estimaciones[campo.key + 'Front'] || 0);
+      this.totalCalculoBackend += this.estimaciones[campo.key + 'Back'];
     });
 
     this.camposEstimacionFrontend.forEach((campo) => {
-      if (campo.key === 'documentacion' && this.totalFrontendHoras === 0) {
-        this.estimaciones[campo.key + 'Front'] = 0;
-      } else if (
-        campo.modo === 'porcentaje' &&
-        campo.porcentaje !== undefined &&
-        campo.porcentaje !== null
-      ) {
-        this.estimaciones[campo.key + 'Front'] = Math.round(
-          (this.totalFrontendHoras * campo.porcentaje) / 100
-        );
-      } else {
-        this.estimaciones[campo.key + 'Front'] = campo.horas ?? 0;
-      }
-      this.estimaciones[campo.key + 'Total'] +=
-        this.estimaciones[campo.key + 'Front'];
-      this.totalCalculoFrontend += this.estimaciones[campo.key + 'Front']; // Sumar horas de cálculo Frontend
+      const porcentaje = campo.porcentaje ?? 0;
+      this.estimaciones[campo.key + 'Front'] =
+        campo.modo === 'porcentaje'
+          ? Math.round((this.totalFrontendHoras * porcentaje) / 100)
+          : campo.horas ?? 0;
+
+      this.estimaciones[campo.key + 'Total'] =
+        (this.estimaciones[campo.key + 'Back'] || 0) +
+        (this.estimaciones[campo.key + 'Front'] || 0);
+      this.totalCalculoFrontend += this.estimaciones[campo.key + 'Front'];
     });
 
     this.estimaciones.desarrolloBackend = this.totalBackendHoras;
@@ -682,30 +873,59 @@ export class EstimadorComponent implements OnInit {
 
   updatePieChartData(): void {
     if (this.estimaciones) {
+      const data: any[] = [];
+      const labels: string[] = [];
+
+      // Campos fijos (que siempre aparecen en el gráfico)
+      const camposFijos = [
+        'analisisFuncionalTotal',
+        'analisisTecnicoTotal',
+        'desarrolloBackend',
+        'desarrolloFront',
+        'pruebasUnitariasTotal',
+        'pruebasIntegracionTotal',
+        'implementacionYSoporteTotal',
+        'gestionTotal',
+        'documentacionTotal',
+      ];
+
+      camposFijos.forEach((campo, index) => {
+        const value = this.estimaciones[campo] || 0;
+        if (value > 0) {
+          data.push(value);
+          labels.push(this.pieChartLabels[index]);
+        }
+      });
+
+      // Evitar duplicados al iterar sobre camposEstimacionBackend
+      this.camposEstimacionBackend.forEach((campo) => {
+        const totalKey = campo.key + 'Total';
+        const indexInFixed = camposFijos.indexOf(totalKey);
+        if (this.estimaciones[totalKey] > 0 && indexInFixed === -1) {
+          data.push(this.estimaciones[totalKey]);
+          labels.push(campo.label);
+        }
+      });
+
       this.pieChartData = {
-        labels: this.pieChartLabels,
-        datasets: [
-          {
-            data: [
-              this.estimaciones.analisisFuncionalTotal,
-              this.estimaciones.analisisTecnicoTotal,
-              this.estimaciones.desarrolloBackend,
-              this.estimaciones.desarrolloFront,
-              this.estimaciones.pruebasUnitariasTotal,
-              this.estimaciones.pruebasIntegracionTotal,
-              this.estimaciones.implementacionYSoporteTotal,
-              this.estimaciones.gestionTotal,
-              this.estimaciones.documentacionTotal, // Nuevo campo Documentación
-            ],
-          },
-        ],
+        labels: labels,
+        datasets: [{ data }],
       };
     } else {
       this.pieChartData = {
-        labels: this.pieChartLabels,
+        labels: [],
         datasets: [{ data: [] }],
       };
     }
+  }
+
+  hasTasks(type: 'backend' | 'frontend'): boolean {
+    if (type === 'backend') {
+      return this.tareas.length > 0;
+    } else if (type === 'frontend') {
+      return this.tareasFrontend.length > 0;
+    }
+    return false;
   }
 
   editarTarea(type: 'backend' | 'frontend', index: number): void {
